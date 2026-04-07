@@ -1,0 +1,35 @@
+.event-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.event-tag-badge--featured {
+  background-color: #fe6b70;
+}
+
+.event-tag-badge--hot {
+  background-color: #ff4d00;
+}
+
+.event-tag-badge--new {
+  background-color: #22c55e;
+}
+
+.event-tag-badge--ongoing {
+  background-color: #fe6b70;
+}
+
+.event-tag-badge--completed {
+  background-color: #22c55e;
+}
+
+.event-tag-badge--ended {
+  background-color: #94a3b8;
+}

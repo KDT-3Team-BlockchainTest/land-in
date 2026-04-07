@@ -1,0 +1,38 @@
+.stat-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat-summary-grid__card {
+  padding: 14px 8px 12px;
+  border-radius: 18px;
+  background: var(--card-bg, #ffffff);
+  text-align: center;
+}
+
+.stat-summary-grid__value-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.stat-summary-grid__icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.stat-summary-grid__value {
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.stat-summary-grid__label {
+  margin: 0;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.3;
+}

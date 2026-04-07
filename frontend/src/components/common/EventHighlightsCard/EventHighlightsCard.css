@@ -1,0 +1,38 @@
+.event-highlights-card {
+  padding: 18px 16px 16px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+
+.event-highlights-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.event-highlights-card__title {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.event-highlights-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.event-highlights-card__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid rgba(254, 107, 112, 0.18);
+  border-radius: 999px;
+  background: rgba(254, 107, 112, 0.05);
+  color: #fe6b70;
+  font-size: 13px;
+  font-weight: 600;
+}
