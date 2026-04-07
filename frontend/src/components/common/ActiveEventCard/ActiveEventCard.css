@@ -112,6 +112,7 @@
 }
 
 .active-event-card__cta.is-joined {
-  background: rgba(254, 107, 112, 0.08);
+  border: 1px solid rgba(254, 107, 112, 0.392); 
+  background: rgba(255, 128, 132, 0.046);
   color: #fe6b70;
 }

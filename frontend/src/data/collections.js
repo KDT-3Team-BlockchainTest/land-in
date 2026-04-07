@@ -16,7 +16,7 @@ const collectionStatusConfig = {
     accentSoft: "rgba(254, 107, 112, 0.1)",
   },
   completed: {
-    label: "완성",
+    label: "완료",
     tag: "completed",
     accentColor: "#22c55e",
     accentSoft: "rgba(34, 197, 94, 0.1)",

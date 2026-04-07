@@ -1,11 +1,12 @@
 import "./BottomNav.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import IconImage from "../../common/IconImage/IconImage";
+import { FiMap } from "react-icons/fi"; // 지도 아이콘 변경
 import bookGrayIcon from "../../../assets/icon/icon_book_g.png";
 import bookPrimaryIcon from "../../../assets/icon/icon_book_p.png";
 import giftGrayIcon from "../../../assets/icon/icon_gift_g.png";
 import giftPrimaryIcon from "../../../assets/icon/icon_gift_p.png";
-import globeIcon from "../../../assets/icon/icon_globe.png";
+// import globeIcon from "../../../assets/icon/icon_globe.png";
 import homeGrayIcon from "../../../assets/icon/icon_home_g.png";
 import homePrimaryIcon from "../../../assets/icon/icon_home_p.png";
 import userGrayIcon from "../../../assets/icon/icon_user_g.png";
@@ -20,7 +21,7 @@ const navItems = [
     activeIcon: bookPrimaryIcon,
     inactiveIcon: bookGrayIcon,
   },
-  { key: "tag", label: "태그", path: "/tag", icon: "/icon_logo_test.png", primary: true },
+  { key: "tag", label: "태그", path: "/tag", icon: "/icon_logo_test_w.png", primary: true },
   {
     key: "reward",
     label: "리워드",
@@ -58,7 +59,7 @@ export default function BottomNav() {
           onClick={() => navigate("/my-progress")}
           aria-label="내 진행 현황 보기"
         >
-          <IconImage src={globeIcon} size={20} />
+          <FiMap size={20} /> {/* 지도 아이콘 변경 */}
         </button>
 
         {navItems.map((item) => {
