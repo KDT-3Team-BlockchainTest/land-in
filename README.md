@@ -157,11 +157,11 @@ gradlew bootRun
 ---
 
 ## 👥 팀원
-
+귀차나
 | 역할 | 이름 |
 |---|---|
 | Frontend | - |
-| Backend | 라솜 |
+| Backend | - |
 | Blockchain | - |
 
 ---
