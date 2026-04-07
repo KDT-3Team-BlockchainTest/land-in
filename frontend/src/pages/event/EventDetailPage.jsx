@@ -1,55 +1,53 @@
 import "./EventDetailPage.css";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { adaptEventDetail } from "../../api/adapters";
+import { eventsApi } from "../../api/events";
 import EventDetailHero from "../../components/common/EventDetailHero/EventDetailHero";
 import EventHighlightsCard from "../../components/common/EventHighlightsCard/EventHighlightsCard";
 import EventProgressCard from "../../components/common/EventProgressCard/EventProgressCard";
 import EventRewardCard from "../../components/common/EventRewardCard/EventRewardCard";
 import EventRouteTimeline from "../../components/common/EventRouteTimeline/EventRouteTimeline";
 import GradientActionButton from "../../components/common/GradientActionButton/GradientActionButton";
-import { getEventById } from "../../data/events";
 import useJoinedEventIds from "../../hooks/useJoinedEventIds";
 
 export default function EventDetailPage() {
   const navigate = useNavigate();
   const { eventId } = useParams();
-  const { joinedEventIds, joinEvent } = useJoinedEventIds();
-  const event = getEventById(eventId);
+  const { joinEvent } = useJoinedEventIds();
+  const [raw, setRaw] = useState(null);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!event) {
-    return <Navigate to="/" replace />;
-  }
+  useEffect(() => {
+    eventsApi.detail(eventId)
+      .then(setRaw)
+      .catch((err) => { if (err.status === 404) setNotFound(true); });
+  }, [eventId]);
 
-  const isJoined = joinedEventIds.includes(event.id);
-  const isJoinable = event.participationState === "joinable";
-  const hasCurrentStep = event.routeSteps.some((step) => step.stepState === "current");
-  const statusLabel = isJoinable ? (isJoined ? "참여 중" : "참여 가능") : event.detailStatusLabel;
+  if (notFound) return <Navigate to="/" replace />;
+  if (!raw) return null;
+
+  const event = adaptEventDetail(raw);
+  const isJoined = raw.joined;
+  const isJoinable = event.participationState === 'joinable';
+  const hasCurrentStep = event.routeSteps.some((s) => s.stepState === 'current');
+  const statusLabel = isJoined ? '참여 중' : (isJoinable ? '참여 가능' : event.detailStatusLabel);
 
   let actionLabel = event.bottomCtaLabel;
+  if (isJoinable && !isJoined) actionLabel = '루트 보기 & 참여하기';
+  else if (hasCurrentStep) actionLabel = '태그';
 
-  if (isJoinable && !isJoined) {
-    actionLabel = "루트 보기 & 참여하기";
-  } else if (hasCurrentStep) {
-    actionLabel = "태그";
-  }
-
-  const handleBottomAction = () => {
+  const handleBottomAction = async () => {
     if (isJoinable && !isJoined) {
-      joinEvent(event.id);
-      navigate("/tag");
+      try { await joinEvent(event.id); } catch { /* ignore */ }
+      navigate('/tag');
       return;
     }
-
-    if (hasCurrentStep) {
-      navigate("/tag");
-      return;
+    if (hasCurrentStep) { navigate('/tag'); return; }
+    if (event.status === 'completed' || event.status === 'ended') {
+      navigate('/collection'); return;
     }
-
-    if (event.status === "completed" || event.status === "ended") {
-      navigate("/collection");
-      return;
-    }
-
-    navigate("/");
+    navigate('/');
   };
 
   return (
@@ -57,7 +55,6 @@ export default function EventDetailPage() {
       <div className="event-detail-page__hero-wrap">
         <EventDetailHero event={event} statusLabel={statusLabel} />
       </div>
-
       <div className="event-detail-page__content">
         <EventProgressCard collected={event.collected} total={event.landmarkCount} />
         <EventHighlightsCard highlights={event.highlights} />

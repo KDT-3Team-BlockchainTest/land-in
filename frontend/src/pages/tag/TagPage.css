@@ -312,3 +312,15 @@
     opacity: 0;
   }
 }
+
+.tag-page__uid-input {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 12px 0 4px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+.tag-page__uid-input:focus { border-color: #fe6b70; }

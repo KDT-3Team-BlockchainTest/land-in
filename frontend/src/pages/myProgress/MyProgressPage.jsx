@@ -1,43 +1,33 @@
 import "./MyProgressPage.css";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { adaptCollection, adaptDashboard } from "../../api/adapters";
+import { collectionsApi } from "../../api/collections";
+import { dashboardApi } from "../../api/dashboard";
 import EmptyState from "../../components/common/EmptyState/EmptyState";
 import NftTipCard from "../../components/common/NftTipCard/NftTipCard";
 import RouteMapTeaser from "../../components/common/RouteMapTeaser/RouteMapTeaser";
 import StatSummaryGrid from "../../components/common/StatSummaryGrid/StatSummaryGrid";
 import TagCampaignCard from "../../components/common/TagCampaignCard/TagCampaignCard";
-import { getTagDashboard } from "../../data/dashboard";
-import useJoinedEventIds from "../../hooks/useJoinedEventIds";
 
 export default function MyProgressPage() {
-  const { joinedEventIds } = useJoinedEventIds();
-  const dashboard = getTagDashboard(joinedEventIds);
-  const hasEvents = dashboard.activeCollections.length > 0;
-  const primaryEventLink = dashboard.activeCollections[0]
-    ? `/event/${dashboard.activeCollections[0].id}`
-    : "/collection";
+  const [stats, setStats] = useState(null);
+  const [activeCollections, setActiveCollections] = useState([]);
 
-  const stats = [
-    {
-      label: "수집한 NFT",
-      value: dashboard.totalNfts,
-      color: "#fe6b70",
-      backgroundColor: "rgba(254, 107, 112, 0.08)",
-      icon: "✨",
-    },
-    {
-      label: "참여 도시",
-      value: dashboard.joinedCities,
-      color: "#8b5cf6",
-      backgroundColor: "rgba(139, 92, 246, 0.08)",
-      icon: "📍",
-    },
-    {
-      label: "진행 중 이벤트",
-      value: dashboard.activeEventsCount,
-      color: "#22c55e",
-      backgroundColor: "rgba(34, 197, 94, 0.08)",
-      icon: "🗺",
-    },
+  useEffect(() => {
+    dashboardApi.stats().then((s) => setStats(adaptDashboard(s))).catch(() => {});
+    collectionsApi.list('ongoing')
+      .then((list) => setActiveCollections((list ?? []).map((c) => adaptCollection(c))))
+      .catch(() => {});
+  }, []);
+
+  const primaryEventLink = activeCollections[0] ? `/event/${activeCollections[0].id}` : '/collection';
+  const hasEvents = activeCollections.length > 0;
+
+  const statItems = [
+    { label: "수집한 NFT", value: stats?.totalNfts ?? 0, color: "#fe6b70", backgroundColor: "rgba(254, 107, 112, 0.08)", icon: "✨" },
+    { label: "참여 도시", value: stats?.joinedCities ?? 0, color: "#8b5cf6", backgroundColor: "rgba(139, 92, 246, 0.08)", icon: "📍" },
+    { label: "진행 중 이벤트", value: stats?.activeEventsCount ?? 0, color: "#22c55e", backgroundColor: "rgba(34, 197, 94, 0.08)", icon: "🗺" },
   ];
 
   return (
@@ -45,12 +35,10 @@ export default function MyProgressPage() {
       <main className="page-layout__content">
         <section className="my-progress-page__intro">
           <h1 className="page-title my-progress-page__title">내 진행 현황</h1>
-          <p className="page-subtitle">
-            참여 중인 컬렉션의 루트와 NFT 진행 상태를 한 번에 확인해보세요.
-          </p>
+          <p className="page-subtitle">참여 중인 컬렉션의 루트와 NFT 진행 상태를 한 번에 확인해보세요.</p>
         </section>
 
-        <StatSummaryGrid items={stats} />
+        <StatSummaryGrid items={statItems} />
 
         <RouteMapTeaser
           to={primaryEventLink}
@@ -63,23 +51,14 @@ export default function MyProgressPage() {
           <>
             <section className="my-progress-page__section">
               <p className="my-progress-page__section-title">이벤트 상세 루트</p>
-              <p className="my-progress-page__section-description">
-                순서대로 방문하고 NFC 태그를 인증해 컬렉션을 완성해보세요.
-              </p>
+              <p className="my-progress-page__section-description">순서대로 방문하고 NFC 태그를 인증해 컬렉션을 완성해보세요.</p>
             </section>
-
             <div className="my-progress-page__campaign-list">
-              {dashboard.activeCollections.map((collection) => (
-                <TagCampaignCard key={collection.id} collection={collection} />
-              ))}
+              {activeCollections.map((c) => <TagCampaignCard key={c.id} collection={c} />)}
             </div>
           </>
         ) : (
-          <EmptyState
-            icon="🧭"
-            title="아직 진행 중인 이벤트가 없어요"
-            description="홈에서 마음에 드는 이벤트를 선택하고 첫 번째 NFT 수집을 시작해보세요."
-          >
+          <EmptyState icon="🧭" title="아직 진행 중인 이벤트가 없어요" description="홈에서 마음에 드는 이벤트를 선택하고 첫 번째 NFT 수집을 시작해보세요.">
             <Link to="/" className="my-progress-page__empty-link">이벤트 둘러보기</Link>
           </EmptyState>
         )}
