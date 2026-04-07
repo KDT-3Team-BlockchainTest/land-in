@@ -1,0 +1,38 @@
+/* Adds bottom spacing between the title and the subtitle below it */
+.my-progress-page__title {
+  margin-bottom: 6px;
+}
+
+.my-progress-page__section-title {
+  margin: 0 0 4px;
+  color: var(--color-gray-900);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.my-progress-page__section-description {
+  margin: 0;
+  color: var(--color-gray-400);
+  font-size: 12px;
+}
+
+.my-progress-page__campaign-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Link rendered inside EmptyState via children prop */
+.my-progress-page__empty-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #ff9a6c 100%);
+  color: var(--color-surface);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}

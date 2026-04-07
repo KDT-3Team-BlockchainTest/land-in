@@ -1,0 +1,91 @@
+/* Adds bottom spacing between the title and the subtitle below it */
+.collection-page__title {
+  margin-bottom: 6px;
+}
+
+.collection-page__filters-scroller {
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px;
+  scrollbar-width: none;
+}
+
+.collection-page__filters-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.collection-page__filter-description {
+  margin: 12px 2px 0;
+  color: var(--color-gray-400);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.collection-page__collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.collection-page__nft-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.collection-page__nft-caption {
+  margin: 0;
+  color: var(--color-gray-400);
+  font-size: 12px;
+}
+
+.collection-page__nft-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.collection-page__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.collection-page__empty-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 28px;
+}
+
+.collection-page__empty-title {
+  margin: 0 0 6px;
+  color: var(--color-gray-600);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.collection-page__empty-description {
+  margin: 0;
+  color: var(--color-gray-400);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 390px) {
+  .collection-page__filters-scroller {
+    margin-left: -14px;
+    margin-right: -14px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}

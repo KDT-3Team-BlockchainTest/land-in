@@ -1,0 +1,40 @@
+.event-reward-card {
+  padding: 18px 16px 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #332d80 0%, #2d2772 100%);
+  box-shadow: 0 10px 28px rgba(45, 39, 114, 0.28);
+}
+
+.event-reward-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.event-reward-card__badge {
+  font-size: 18px;
+}
+
+.event-reward-card__title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.event-reward-card__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.event-reward-card__description {
+  margin: 0;
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 1.5;
+}
