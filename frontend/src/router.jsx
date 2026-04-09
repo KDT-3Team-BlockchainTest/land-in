@@ -1,5 +1,4 @@
 import { createBrowserRouter } from "react-router-dom";
-import App from "./App";
 import RequireAuth from "./components/auth/RequireAuth";
 import Login from "./pages/login_all/Login";
 import Join from "./pages/login_all/Join";
@@ -24,11 +23,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: (
-      <RequireAuth>
-        <App />
-      </RequireAuth>
-    ),
+    element: <RequireAuth />,
     children: [
       { index: true, element: <HomePage /> },
       { path: "collection", element: <CollectionPage /> },
