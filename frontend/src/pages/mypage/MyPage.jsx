@@ -78,7 +78,7 @@ export default function MyPage() {
   };
 }, []);
 
-  console.log("렌더링 중 profileSummary =", profileSummary); // 렌더링 직전 값 확인
+  console.log("Rendering... profileSummary =", profileSummary); // 렌더링 직전 값 확인
 
   const achievements = getAchievementItems(profileSummary);
   const unlockedCount = achievements.filter((a) => a.state === "unlocked").length;
