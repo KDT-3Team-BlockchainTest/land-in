@@ -6,7 +6,7 @@ import { dashboardApi } from "../../api/dashboard";
 import ProfileAchievementCard from "../../components/common/ProfileAchievementCard/ProfileAchievementCard";
 import ProfileMenuCard from "../../components/common/ProfileMenuCard/ProfileMenuCard";
 import { getAchievementItems, settingsItems } from "../../data/profile";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/useAuth";
 
 function travelStats(profileSummary) {
   return [

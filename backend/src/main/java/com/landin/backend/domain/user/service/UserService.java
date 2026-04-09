@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -30,21 +31,21 @@ public class UserService {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
-        User user = User.builder()
+        User user = Objects.requireNonNull(User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .displayName(request.getDisplayName())
                 .avatarUrl(request.getAvatarUrl())
-                .build();
+                .build(), "User must not be null");
 
-        userRepository.save(user);
+        user = Objects.requireNonNull(userRepository.save(user), "Saved user must not be null");
 
         return AuthResponse.builder()
-                .id(user.getId())
+                .id(Objects.requireNonNull(user.getId(), "Saved user id must not be null"))
                 .email(user.getEmail())
                 .displayName(user.getDisplayName())
                 .avatarUrl(user.getAvatarUrl())
-                .accessToken(jwtTokenProvider.generateToken(user.getId()))
+                .accessToken(jwtTokenProvider.generateToken(Objects.requireNonNull(user.getId(), "Saved user id must not be null")))
                 .build();
     }
 
@@ -68,7 +69,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(UUID userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         return UserProfileResponse.from(user);
     }

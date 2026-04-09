@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -33,7 +34,8 @@ public class RewardService {
         LocalDate today = LocalDate.now();
         return rewards.stream()
                 .map(r -> {
-                    if (r.getStatus() == RewardStatus.AVAILABLE && r.getValidUntil().isBefore(today)) {
+                    if (Objects.requireNonNull(r.getStatus(), "Reward status must not be null") == RewardStatus.AVAILABLE
+                            && Objects.requireNonNull(r.getValidUntil(), "Reward expiry must not be null").isBefore(today)) {
                         r.expire();
                     }
                     return UserRewardResponse.from(r);
@@ -43,18 +45,18 @@ public class RewardService {
 
     @Transactional
     public UserRewardResponse useReward(UUID userId, UUID rewardId) {
-        UserReward reward = userRewardRepository.findById(rewardId)
+        UserReward reward = userRewardRepository.findById(Objects.requireNonNull(rewardId, "Reward id must not be null"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.REWARD_NOT_FOUND));
 
         if (!reward.getUser().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.REWARD_NOT_FOUND);
         }
 
-        if (reward.getStatus() != RewardStatus.AVAILABLE) {
+        if (Objects.requireNonNull(reward.getStatus(), "Reward status must not be null") != RewardStatus.AVAILABLE) {
             throw new BusinessException(ErrorCode.REWARD_NOT_AVAILABLE);
         }
 
-        if (reward.getValidUntil().isBefore(LocalDate.now())) {
+        if (Objects.requireNonNull(reward.getValidUntil(), "Reward expiry must not be null").isBefore(LocalDate.now())) {
             reward.expire();
             throw new BusinessException(ErrorCode.REWARD_NOT_AVAILABLE);
         }

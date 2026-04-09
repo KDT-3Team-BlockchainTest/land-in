@@ -34,9 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,10 +58,12 @@ public class NfcService {
 
     @Transactional
     public NfcVerifyResponse verify(UUID userId, NfcVerifyRequest request) {
-        String tagUid = request.getTagUid();
-        User user = userRepository.getReferenceById(userId);
+        String tagUid = Objects.requireNonNull(request.getTagUid(), "Tag UID must not be null");
+        User user = Objects.requireNonNull(
+                userRepository.getReferenceById(Objects.requireNonNull(userId, "User id must not be null")),
+                "User reference must not be null"
+        );
 
-        // 1. 태그 조회
         NfcTag nfcTag = nfcTagRepository.findByTagUid(tagUid).orElse(null);
         if (nfcTag == null) {
             saveLog(user, tagUid, NfcScanResult.UNKNOWN_TAG);
@@ -75,29 +77,25 @@ public class NfcService {
         Step step = nfcTag.getStep();
         Event event = step.getEvent();
 
-        // 2. 이벤트 상태 확인 (active or featured)
-        if (event.getStatus() != EventStatus.ACTIVE) {
+        if (Objects.requireNonNull(event.getStatus(), "Event status must not be null") != EventStatus.ACTIVE) {
             saveLog(user, tagUid, NfcScanResult.UNKNOWN_TAG);
             throw new BusinessException(ErrorCode.EVENT_NOT_JOINABLE);
         }
 
-        // 3. 참여 여부 확인
         if (!participationRepository.existsByUserIdAndEventId(userId, event.getId())) {
             saveLog(user, tagUid, NfcScanResult.NOT_JOINED);
             throw new BusinessException(ErrorCode.NOT_JOINED);
         }
 
-        // 4. 이미 완료한 스텝인지 확인
         if (stepCompletionRepository.existsByUserIdAndStepId(userId, step.getId())) {
             saveLog(user, tagUid, NfcScanResult.ALREADY_DONE);
             throw new BusinessException(ErrorCode.STEP_ALREADY_DONE);
         }
 
-        // 5. 순서 확인 (이전 스텝이 완료됐는지)
         if (step.getOrderIndex() > 1) {
             List<Step> stepsInOrder = stepRepository.findByEventIdOrderByOrderIndex(event.getId());
             Optional<Step> prevStep = stepsInOrder.stream()
-                    .filter(s -> s.getOrderIndex() == step.getOrderIndex() - 1)
+                    .filter(candidate -> candidate.getOrderIndex() == step.getOrderIndex() - 1)
                     .findFirst();
             if (prevStep.isPresent() && !stepCompletionRepository.existsByUserIdAndStepId(userId, prevStep.get().getId())) {
                 saveLog(user, tagUid, NfcScanResult.WRONG_ORDER);
@@ -105,33 +103,39 @@ public class NfcService {
             }
         }
 
-        // 6. 스텝 완료 기록
-        StepCompletion completion = StepCompletion.builder()
-                .user(user)
-                .step(step)
-                .completedAt(LocalDateTime.now())
-                .build();
-        stepCompletionRepository.save(completion);
+        StepCompletion completion = Objects.requireNonNull(
+                StepCompletion.builder()
+                        .user(user)
+                        .step(step)
+                        .completedAt(LocalDateTime.now())
+                        .build(),
+                "Step completion must not be null"
+        );
+        Objects.requireNonNull(
+                stepCompletionRepository.save(completion),
+                "Saved step completion must not be null"
+        );
 
-        // 7. NFT 발행 (템플릿 복사)
         NftTemplate template = nftTemplateRepository.findByStepId(step.getId())
-                .orElseThrow(() -> new RuntimeException("NFT 템플릿이 없습니다. stepId=" + step.getId()));
+                .orElseThrow(() -> new RuntimeException("NFT template is missing. stepId=" + step.getId()));
 
-        UserNft userNft = UserNft.builder()
-                .user(user)
-                .step(step)
-                .event(event)
-                .nftTemplate(template)
-                .name(template.getName())
-                .imageUrl(template.getImageUrl())
-                .rarity(template.getRarity())
-                .mintedAt(LocalDateTime.now())
-                .build();
-        userNftRepository.save(userNft);
+        UserNft userNft = Objects.requireNonNull(
+                UserNft.builder()
+                        .user(user)
+                        .step(step)
+                        .event(event)
+                        .nftTemplate(template)
+                        .name(template.getName())
+                        .imageUrl(template.getImageUrl())
+                        .rarity(template.getRarity())
+                        .mintedAt(LocalDateTime.now())
+                        .build(),
+                "User NFT must not be null"
+        );
+        userNft = Objects.requireNonNull(userNftRepository.save(userNft), "Saved user NFT must not be null");
 
         saveLog(user, tagUid, NfcScanResult.SUCCESS);
 
-        // 8. 컬렉션 완료 확인 → 리워드 발급
         UserReward issuedReward = checkAndIssueReward(userId, user, event);
 
         return NfcVerifyResponse.builder()
@@ -149,41 +153,46 @@ public class NfcService {
             return null;
         }
 
-        // 이미 리워드 발급됐으면 스킵 (멱등성)
         if (userRewardRepository.existsByUserIdAndEventId(userId, event.getId())) {
             return null;
         }
 
         Optional<RewardTemplate> templateOpt = rewardTemplateRepository.findByEventId(event.getId());
         if (templateOpt.isEmpty()) {
-            log.warn("리워드 템플릿 없음. eventId={}", event.getId());
+            log.warn("Reward template missing. eventId={}", event.getId());
             return null;
         }
 
         RewardTemplate template = templateOpt.get();
         LocalDateTime now = LocalDateTime.now();
 
-        UserReward reward = UserReward.builder()
-                .user(user)
-                .event(event)
-                .rewardTemplate(template)
-                .couponCode(generateCouponCode())
-                .status(RewardStatus.AVAILABLE)
-                .issuedAt(now)
-                .validUntil(now.toLocalDate().plusDays(template.getValidityDays()))
-                .build();
+        UserReward reward = Objects.requireNonNull(
+                UserReward.builder()
+                        .user(user)
+                        .event(event)
+                        .rewardTemplate(template)
+                        .couponCode(generateCouponCode())
+                        .status(RewardStatus.AVAILABLE)
+                        .issuedAt(now)
+                        .validUntil(now.toLocalDate().plusDays(template.getValidityDays()))
+                        .build(),
+                "Reward must not be null"
+        );
 
-        return userRewardRepository.save(reward);
+        return Objects.requireNonNull(userRewardRepository.save(reward), "Saved reward must not be null");
     }
 
     private void saveLog(User user, String tagUid, NfcScanResult result) {
-        NfcScanLog log = NfcScanLog.builder()
-                .user(user)
-                .tagUid(tagUid)
-                .scannedAt(LocalDateTime.now())
-                .result(result)
-                .build();
-        nfcScanLogRepository.save(log);
+        NfcScanLog log = Objects.requireNonNull(
+                NfcScanLog.builder()
+                        .user(user)
+                        .tagUid(tagUid)
+                        .scannedAt(LocalDateTime.now())
+                        .result(result)
+                        .build(),
+                "Scan log must not be null"
+        );
+        Objects.requireNonNull(nfcScanLogRepository.save(log), "Saved scan log must not be null");
     }
 
     private String generateCouponCode() {

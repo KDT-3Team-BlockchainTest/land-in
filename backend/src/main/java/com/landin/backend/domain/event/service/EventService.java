@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +50,7 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public EventDetailResponse getEventDetail(String eventId, UUID userId) {
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findById(Objects.requireNonNull(eventId, "Event id must not be null"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND));
 
         List<Step> steps = stepRepository.findByEventIdOrderByOrderIndex(eventId);

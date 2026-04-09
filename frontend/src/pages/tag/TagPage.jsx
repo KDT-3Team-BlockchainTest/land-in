@@ -1,12 +1,10 @@
 import "./TagPage.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { adaptCollection, adaptNft } from "../../api/adapters";
+import { adaptCollection } from "../../api/adapters";
 import { collectionsApi } from "../../api/collections";
 import { nfcApi } from "../../api/nfc";
-import { nftsApi } from "../../api/nfts";
 import PlaceImage from "../../components/common/PlaceImage/PlaceImage";
-import { eventsApi } from "../../api/events";
 
 const VERIFY_DELAY_MS = 2500;
 const VERIFIED_DELAY_MS = 1700;
@@ -97,10 +95,6 @@ export default function TagPage() {
   }, []);
 
   const activeCollection = collections[0] ?? null;
-  const currentStep = useMemo(
-    () => activeCollection?.routeSteps?.find((s) => s.stepState === 'current') ?? null,
-    [activeCollection],
-  );
 
   // scanning → verified
   useEffect(() => {

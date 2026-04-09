@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { eventsApi } from "../api/events";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 
 export default function useJoinedEventIds() {
   const { user } = useAuth();

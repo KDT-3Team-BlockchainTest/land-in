@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -27,11 +28,10 @@ public class ParticipationService {
 
     @Transactional
     public void joinEvent(UUID userId, String eventId) {
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findById(Objects.requireNonNull(eventId, "Event id must not be null"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND));
 
-        // active 이벤트만 참여 가능
-        if (event.getStatus() != EventStatus.ACTIVE) {
+        if (Objects.requireNonNull(event.getStatus(), "Event status must not be null") != EventStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.EVENT_NOT_JOINABLE);
         }
 
@@ -39,15 +39,21 @@ public class ParticipationService {
             throw new BusinessException(ErrorCode.ALREADY_JOINED);
         }
 
-        User user = userRepository.getReferenceById(userId);
+        User user = Objects.requireNonNull(
+                userRepository.getReferenceById(Objects.requireNonNull(userId, "User id must not be null")),
+                "User reference must not be null"
+        );
 
-        EventParticipation participation = EventParticipation.builder()
-                .user(user)
-                .event(event)
-                .joinedAt(LocalDateTime.now())
-                .build();
+        EventParticipation participation = Objects.requireNonNull(
+                EventParticipation.builder()
+                        .user(user)
+                        .event(event)
+                        .joinedAt(LocalDateTime.now())
+                        .build(),
+                "Participation must not be null"
+        );
 
-        participationRepository.save(participation);
+        Objects.requireNonNull(participationRepository.save(participation), "Saved participation must not be null");
     }
 
     @Transactional(readOnly = true)
