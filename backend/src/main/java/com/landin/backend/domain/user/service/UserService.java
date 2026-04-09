@@ -6,6 +6,7 @@ import com.landin.backend.domain.user.dto.AuthResponse;
 import com.landin.backend.domain.user.dto.LoginRequest;
 import com.landin.backend.domain.user.dto.SignupRequest;
 import com.landin.backend.domain.user.dto.UserProfileResponse;
+import com.landin.backend.domain.user.dto.WalletConnectRequest;
 import com.landin.backend.domain.user.entity.User;
 import com.landin.backend.domain.user.repository.UserRepository;
 import com.landin.backend.security.JwtTokenProvider;
@@ -20,6 +21,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    private static final long HOODI_CHAIN_ID = 560048L;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -45,6 +48,10 @@ public class UserService {
                 .email(user.getEmail())
                 .displayName(user.getDisplayName())
                 .avatarUrl(user.getAvatarUrl())
+                .walletAddress(user.getWalletAddress())
+                .walletChainId(user.getWalletChainId())
+                .walletProvider(user.getWalletProvider())
+                .walletConnectedAt(user.getWalletConnectedAt())
                 .accessToken(jwtTokenProvider.generateToken(Objects.requireNonNull(user.getId(), "Saved user id must not be null")))
                 .build();
     }
@@ -63,6 +70,10 @@ public class UserService {
                 .email(user.getEmail())
                 .displayName(user.getDisplayName())
                 .avatarUrl(user.getAvatarUrl())
+                .walletAddress(user.getWalletAddress())
+                .walletChainId(user.getWalletChainId())
+                .walletProvider(user.getWalletProvider())
+                .walletConnectedAt(user.getWalletConnectedAt())
                 .accessToken(jwtTokenProvider.generateToken(user.getId()))
                 .build();
     }
@@ -71,6 +82,33 @@ public class UserService {
     public UserProfileResponse getProfile(UUID userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        return UserProfileResponse.from(user);
+    }
+
+    @Transactional
+    public UserProfileResponse connectWallet(UUID userId, WalletConnectRequest request) {
+        if (!Objects.equals(request.getChainId(), HOODI_CHAIN_ID)) {
+            throw new BusinessException(ErrorCode.INVALID_WALLET_NETWORK);
+        }
+
+        User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null"))
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        user.updateWalletConnection(
+                request.getWalletAddress().trim(),
+                request.getChainId(),
+                request.getWalletProvider() == null ? "injected" : request.getWalletProvider().trim()
+        );
+
+        return UserProfileResponse.from(user);
+    }
+
+    @Transactional
+    public UserProfileResponse disconnectWallet(UUID userId) {
+        User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null"))
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        user.clearWalletConnection();
         return UserProfileResponse.from(user);
     }
 }

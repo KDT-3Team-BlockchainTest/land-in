@@ -11,6 +11,7 @@ import MyProgressPage from "./pages/myProgress/MyProgressPage";
 import NftGalleryPage from "./pages/nftGallery/NftGalleryPage";
 import RewardsPage from "./pages/rewards/RewardsPage";
 import TagPage from "./pages/tag/TagPage";
+import WalletConnectPage from "./pages/wallet/WalletConnectPage";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
       { path: "tag", element: <TagPage /> },
       { path: "reward", element: <RewardsPage /> },
       { path: "mypage", element: <MyPage /> },
+      { path: "wallet/connect", element: <WalletConnectPage /> },
       { path: "my-progress", element: <MyProgressPage /> },
       { path: "event/:eventId", element: <EventDetailPage /> },
       { path: "nft-gallery/:eventId", element: <NftGalleryPage /> },

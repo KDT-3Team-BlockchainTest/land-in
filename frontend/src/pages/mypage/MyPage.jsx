@@ -3,55 +3,120 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { adaptProfileSummary } from "../../api/adapters";
 import { dashboardApi } from "../../api/dashboard";
+import { walletApi } from "../../api/wallet";
 import ProfileAchievementCard from "../../components/common/ProfileAchievementCard/ProfileAchievementCard";
 import ProfileMenuCard from "../../components/common/ProfileMenuCard/ProfileMenuCard";
 import { getAchievementItems, settingsItems } from "../../data/profile";
 import { useAuth } from "../../contexts/useAuth";
+import { formatWalletAddress, HOODI_CHAIN_ID } from "../../utils/wallet";
 
 function travelStats(profileSummary) {
   return [
-    { id: "landmarks", emoji: "📍", label: "방문한 랜드마크", description: "총 NFC 태그 인증 횟수", value: profileSummary.landmarkCount, unit: "곳", color: "#fe6b70", backgroundColor: "rgba(254, 107, 112, 0.08)" },
-    { id: "countries", emoji: "🌍", label: "여행한 국가", description: "컬렉션 참여 기준", value: profileSummary.countryCount, unit: "개국", color: "#8b5cf6", backgroundColor: "rgba(139, 92, 246, 0.08)" },
-    { id: "distance", emoji: "🧭", label: "총 이동 거리", description: "여행 기록 기반 추정", value: profileSummary.totalDistanceLabel, unit: "", color: "#06b6d4", backgroundColor: "rgba(6, 182, 212, 0.08)" },
+    {
+      id: "landmarks",
+      emoji: "📍",
+      label: "방문한 랜드마크",
+      description: "누적 NFC 태그 인증 횟수",
+      value: profileSummary.landmarkCount,
+      unit: "곳",
+      color: "#fe6b70",
+      backgroundColor: "rgba(254, 107, 112, 0.08)",
+    },
+    {
+      id: "countries",
+      emoji: "🌍",
+      label: "여행한 국가",
+      description: "컬렉션에 참여한 국가 수",
+      value: profileSummary.countryCount,
+      unit: "개국",
+      color: "#8b5cf6",
+      backgroundColor: "rgba(139, 92, 246, 0.08)",
+    },
+    {
+      id: "distance",
+      emoji: "🧭",
+      label: "총 이동 거리",
+      description: "여행 기록 기반 추정",
+      value: profileSummary.totalDistanceLabel,
+      unit: "",
+      color: "#06b6d4",
+      backgroundColor: "rgba(6, 182, 212, 0.08)",
+    },
   ];
 }
 
-const defaultProfile = { nftCount: 0, cityCount: 0, countryCount: 0, completedCollectionCount: 0, landmarkCount: 0, totalDistanceLabel: '— km' };
+const defaultProfile = {
+  nftCount: 0,
+  cityCount: 0,
+  countryCount: 0,
+  completedCollectionCount: 0,
+  landmarkCount: 0,
+  totalDistanceLabel: "-- km",
+};
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserProfile } = useAuth();
   const [profileSummary, setProfileSummary] = useState(defaultProfile);
+  const [walletLoading, setWalletLoading] = useState(false);
 
   useEffect(() => {
-    dashboardApi.stats().then((s) => setProfileSummary(adaptProfileSummary(s))).catch(() => {});
+    dashboardApi
+      .stats()
+      .then((stats) => setProfileSummary(adaptProfileSummary(stats)))
+      .catch(() => {});
   }, []);
 
   const achievements = getAchievementItems(profileSummary);
-  const unlockedCount = achievements.filter((a) => a.state === "unlocked").length;
+  const unlockedCount = achievements.filter((achievement) => achievement.state === "unlocked").length;
   const unlockedPercent = achievements.length ? Math.round((unlockedCount / achievements.length) * 100) : 0;
 
   const handleLogout = () => {
     logout();
-    navigate('/login', { replace: true });
+    navigate("/login", { replace: true });
+  };
+
+  const handleWalletConnect = () => {
+    navigate("/wallet/connect", { state: { nextPath: "/mypage" } });
+  };
+
+  const handleWalletDisconnect = async () => {
+    const shouldDisconnect = window.confirm(
+      "Disconnect the currently linked wallet? You can reconnect the same wallet or a different wallet later.",
+    );
+    if (!shouldDisconnect) {
+      return;
+    }
+
+    setWalletLoading(true);
+    try {
+      const profile = await walletApi.disconnect();
+      updateUserProfile(profile);
+    } catch (error) {
+      window.alert(error.message || "Failed to disconnect the wallet.");
+    } finally {
+      setWalletLoading(false);
+    }
   };
 
   return (
     <div className="page-layout">
       <main className="page-layout__content">
-        <section className="my-page__intro"><h1 className="page-title">마이페이지</h1></section>
+        <section className="my-page__intro">
+          <h1 className="page-title">My Page</h1>
+        </section>
 
         <section className="my-page__profile-card">
           <div className="my-page__profile-accent" />
           <div className="my-page__profile-body">
             <div className="my-page__profile-header">
               <div className="my-page__avatar" aria-hidden="true">
-                {user?.avatarUrl ? <img src={user.avatarUrl} alt="avatar" /> : <span>🧑</span>}
+                {user?.avatarUrl ? <img src={user.avatarUrl} alt="avatar" /> : <span>🧳</span>}
               </div>
               <div className="my-page__identity">
                 <div>
-                  <p className="my-page__name">{user?.displayName ?? ''} 님</p>
-                  <p className="my-page__handle">{user?.email ?? ''}</p>
+                  <p className="my-page__name">{user?.displayName ?? ""}</p>
+                  <p className="my-page__handle">{user?.email ?? ""}</p>
                 </div>
                 <span className="my-page__level">City Explorer</span>
               </div>
@@ -59,12 +124,60 @@ export default function MyPage() {
             <div className="my-page__profile-stats">
               <article className="my-page__mini-stat is-coral">
                 <p className="my-page__mini-value">{profileSummary.nftCount}</p>
-                <p className="my-page__mini-label">보유 NFT</p>
+                <p className="my-page__mini-label">Owned NFTs</p>
               </article>
               <article className="my-page__mini-stat is-violet">
                 <p className="my-page__mini-value">{profileSummary.cityCount}</p>
-                <p className="my-page__mini-label">참여 도시</p>
+                <p className="my-page__mini-label">Visited Cities</p>
               </article>
+            </div>
+          </div>
+        </section>
+
+        <section className="my-page__wallet-card">
+          <div className="my-page__section-head">
+            <div>
+              <p className="my-page__section-title">Wallet Connection</p>
+              <p className="my-page__section-description">
+                Link your Hoodi testnet wallet to prepare for future on-chain minting and manage which wallet this
+                account uses.
+              </p>
+            </div>
+            <span className={`my-page__wallet-badge ${user?.walletAddress ? "is-connected" : "is-pending"}`}>
+              {user?.walletAddress ? "Connected" : "Not linked"}
+            </span>
+          </div>
+          <div className="my-page__wallet-body">
+            <div>
+              <p className="my-page__wallet-label">Current wallet</p>
+              <strong className="my-page__wallet-value">
+                {user?.walletAddress ? formatWalletAddress(user.walletAddress) : "No wallet connected yet"}
+              </strong>
+              <p className="my-page__wallet-meta">
+                {user?.walletAddress
+                  ? `Hoodi Testnet · Chain ID ${user.walletChainId ?? HOODI_CHAIN_ID}`
+                  : "You can skip wallet onboarding for now, but some future Web3 features will require a linked wallet."}
+              </p>
+            </div>
+            <div className="my-page__wallet-actions">
+              <button
+                type="button"
+                className="my-page__wallet-button"
+                onClick={handleWalletConnect}
+                disabled={walletLoading}
+              >
+                {user?.walletAddress ? "Reconnect Wallet" : "Connect Wallet"}
+              </button>
+              {user?.walletAddress ? (
+                <button
+                  type="button"
+                  className="my-page__wallet-disconnect"
+                  onClick={handleWalletDisconnect}
+                  disabled={walletLoading}
+                >
+                  {walletLoading ? "Disconnecting..." : "Disconnect"}
+                </button>
+              ) : null}
             </div>
           </div>
         </section>
@@ -72,21 +185,29 @@ export default function MyPage() {
         <section className="my-page__travel-card">
           <div className="my-page__section-head">
             <div>
-              <p className="my-page__section-title">여행 통계</p>
-              <p className="my-page__section-description">컬렉션 참여 기준으로 정리한 내 여행 기록</p>
+              <p className="my-page__section-title">Travel Stats</p>
+              <p className="my-page__section-description">A quick summary of your travel activity across Land-in.</p>
             </div>
             <span className="my-page__year-badge">2026</span>
           </div>
           <div className="my-page__travel-list">
             {travelStats(profileSummary).map((item) => (
               <article key={item.id} className="my-page__travel-item">
-                <div className="my-page__travel-icon" style={{ backgroundColor: item.backgroundColor, color: item.color }} aria-hidden="true">{item.emoji}</div>
+                <div
+                  className="my-page__travel-icon"
+                  style={{ backgroundColor: item.backgroundColor, color: item.color }}
+                  aria-hidden="true"
+                >
+                  {item.emoji}
+                </div>
                 <div className="my-page__travel-copy">
                   <p className="my-page__travel-label">{item.label}</p>
                   <p className="my-page__travel-description">{item.description}</p>
                 </div>
                 <div className="my-page__travel-value-wrap">
-                  <strong className="my-page__travel-value" style={{ color: item.color }}>{item.value}</strong>
+                  <strong className="my-page__travel-value" style={{ color: item.color }}>
+                    {item.value}
+                  </strong>
                   {item.unit ? <span className="my-page__travel-unit">{item.unit}</span> : null}
                 </div>
               </article>
@@ -97,8 +218,10 @@ export default function MyPage() {
         <section className="my-page__achievement-section">
           <div className="my-page__section-head">
             <div>
-              <p className="my-page__section-title">업적</p>
-              <p className="my-page__section-description">{unlockedCount} / {achievements.length} 달성</p>
+              <p className="my-page__section-title">Achievements</p>
+              <p className="my-page__section-description">
+                {unlockedCount} / {achievements.length} unlocked
+              </p>
             </div>
             <div className="my-page__achievement-progress">
               <div className="my-page__achievement-track">
@@ -108,21 +231,25 @@ export default function MyPage() {
             </div>
           </div>
           <div className="my-page__achievement-grid">
-            {achievements.map((item, i) => <ProfileAchievementCard key={item.id} item={item} index={i} />)}
+            {achievements.map((item, index) => (
+              <ProfileAchievementCard key={item.id} item={item} index={index} />
+            ))}
           </div>
         </section>
 
         <section className="my-page__menu-section">
           <div className="my-page__section-head">
             <div>
-              <p className="my-page__section-title">설정</p>
-              <p className="my-page__section-description">알림, 언어, 보안 설정을 확인해보세요.</p>
+              <p className="my-page__section-title">Settings</p>
+              <p className="my-page__section-description">Review app options, preferences, and account-related items.</p>
             </div>
           </div>
           <ProfileMenuCard items={settingsItems} />
         </section>
 
-        <button type="button" className="my-page__logout" onClick={handleLogout}>로그아웃</button>
+        <button type="button" className="my-page__logout" onClick={handleLogout}>
+          Log Out
+        </button>
         <p className="my-page__footer">land-in v1.0.0</p>
       </main>
     </div>

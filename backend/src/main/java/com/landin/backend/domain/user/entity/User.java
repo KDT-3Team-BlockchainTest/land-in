@@ -4,6 +4,7 @@ import com.landin.backend.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -28,4 +29,23 @@ public class User extends BaseTimeEntity {
     private String displayName;
 
     private String avatarUrl;
+
+    private String walletAddress;
+    private Long walletChainId;
+    private String walletProvider;
+    private LocalDateTime walletConnectedAt;
+
+    public void updateWalletConnection(String walletAddress, Long walletChainId, String walletProvider) {
+        this.walletAddress = walletAddress;
+        this.walletChainId = walletChainId;
+        this.walletProvider = walletProvider;
+        this.walletConnectedAt = LocalDateTime.now();
+    }
+
+    public void clearWalletConnection() {
+        this.walletAddress = null;
+        this.walletChainId = null;
+        this.walletProvider = null;
+        this.walletConnectedAt = null;
+    }
 }

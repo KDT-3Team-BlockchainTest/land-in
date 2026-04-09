@@ -64,8 +64,11 @@ export default function Join() {
     setLoading(true);
 
     try {
-      await signup(form.email, form.password, form.displayName);
-      navigate("/", { replace: true });
+      const profile = await signup(form.email, form.password, form.displayName);
+      navigate(profile.walletAddress ? "/" : "/wallet/connect", {
+        replace: true,
+        state: { nextPath: "/" },
+      });
     } catch (err) {
       setError(err.message || "Failed to create account.");
     } finally {

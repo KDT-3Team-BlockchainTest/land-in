@@ -4,6 +4,7 @@ import com.landin.backend.domain.user.entity.User;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -13,6 +14,10 @@ public class UserProfileResponse {
     private String email;
     private String displayName;
     private String avatarUrl;
+    private String walletAddress;
+    private Long walletChainId;
+    private String walletProvider;
+    private LocalDateTime walletConnectedAt;
 
     public static UserProfileResponse from(User user) {
         return UserProfileResponse.builder()
@@ -20,6 +25,10 @@ public class UserProfileResponse {
                 .email(user.getEmail())
                 .displayName(user.getDisplayName())
                 .avatarUrl(user.getAvatarUrl())
+                .walletAddress(user.getWalletAddress())
+                .walletChainId(user.getWalletChainId())
+                .walletProvider(user.getWalletProvider())
+                .walletConnectedAt(user.getWalletConnectedAt())
                 .build();
     }
 }
