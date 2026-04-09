@@ -22,4 +22,4 @@ logging:
 
 app:
   cors:
-    allowed-origin-patterns: http://localhost:5173,http://localhost:3000
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://localhost:3000}

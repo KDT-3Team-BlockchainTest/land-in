@@ -26,6 +26,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
+        
+        System.out.println("request uri = " + request.getRequestURI());
+        System.out.println("token = " + token);
+
         if (token != null && jwtTokenProvider.validateToken(token)) {
             UUID userId = Objects.requireNonNull(jwtTokenProvider.getUserId(token), "JWT user id must not be null");
             String principal = Objects.requireNonNull(userId.toString(), "JWT principal must not be null");
@@ -35,6 +39,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+            System.out.println("auth user = " + auth.getName());
+            System.out.println("authorities = " + auth.getAuthorities());
+                    
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
         filterChain.doFilter(request, response);

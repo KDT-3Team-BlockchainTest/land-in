@@ -14,30 +14,30 @@ function travelStats(profileSummary) {
   return [
     {
       id: "landmarks",
-      emoji: "📍",
-      label: "방문한 랜드마크",
-      description: "누적 NFC 태그 인증 횟수",
-      value: profileSummary.landmarkCount,
-      unit: "곳",
+      emoji: "LM",
+      label: "Landmarks",
+      description: "Verified landmark visits",
+      value: profileSummary.landmarkCount ?? 0,
+      unit: "",
       color: "#fe6b70",
       backgroundColor: "rgba(254, 107, 112, 0.08)",
     },
     {
       id: "countries",
-      emoji: "🌍",
-      label: "여행한 국가",
-      description: "컬렉션에 참여한 국가 수",
-      value: profileSummary.countryCount,
-      unit: "개국",
+      emoji: "CT",
+      label: "Countries",
+      description: "Countries explored through collections",
+      value: profileSummary.countryCount ?? 0,
+      unit: "",
       color: "#8b5cf6",
       backgroundColor: "rgba(139, 92, 246, 0.08)",
     },
     {
       id: "distance",
-      emoji: "🧭",
-      label: "총 이동 거리",
-      description: "여행 기록 기반 추정",
-      value: profileSummary.totalDistanceLabel,
+      emoji: "KM",
+      label: "Distance",
+      description: "Estimated from your route activity",
+      value: profileSummary.totalDistanceLabel ?? "0 km",
       unit: "",
       color: "#06b6d4",
       backgroundColor: "rgba(6, 182, 212, 0.08)",
@@ -51,7 +51,7 @@ const defaultProfile = {
   countryCount: 0,
   completedCollectionCount: 0,
   landmarkCount: 0,
-  totalDistanceLabel: "-- km",
+  totalDistanceLabel: "0 km",
 };
 
 export default function MyPage() {
@@ -61,10 +61,20 @@ export default function MyPage() {
   const [walletLoading, setWalletLoading] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     dashboardApi
       .stats()
-      .then((stats) => setProfileSummary(adaptProfileSummary(stats)))
+      .then((stats) => {
+        if (active) {
+          setProfileSummary(adaptProfileSummary(stats));
+        }
+      })
       .catch(() => {});
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const achievements = getAchievementItems(profileSummary);
@@ -84,6 +94,7 @@ export default function MyPage() {
     const shouldDisconnect = window.confirm(
       "Disconnect the currently linked wallet? You can reconnect the same wallet or a different wallet later.",
     );
+
     if (!shouldDisconnect) {
       return;
     }
@@ -111,11 +122,11 @@ export default function MyPage() {
           <div className="my-page__profile-body">
             <div className="my-page__profile-header">
               <div className="my-page__avatar" aria-hidden="true">
-                {user?.avatarUrl ? <img src={user.avatarUrl} alt="avatar" /> : <span>🧳</span>}
+                {user?.avatarUrl ? <img src={user.avatarUrl} alt="avatar" /> : <span>U</span>}
               </div>
               <div className="my-page__identity">
                 <div>
-                  <p className="my-page__name">{user?.displayName ?? ""}</p>
+                  <p className="my-page__name">{user?.displayName ?? "Land-in User"}</p>
                   <p className="my-page__handle">{user?.email ?? ""}</p>
                 </div>
                 <span className="my-page__level">City Explorer</span>
@@ -155,8 +166,8 @@ export default function MyPage() {
               </strong>
               <p className="my-page__wallet-meta">
                 {user?.walletAddress
-                  ? `Hoodi Testnet · Chain ID ${user.walletChainId ?? HOODI_CHAIN_ID}`
-                  : "You can skip wallet onboarding for now, but some future Web3 features will require a linked wallet."}
+                  ? `Hoodi Testnet - Chain ID ${user.walletChainId ?? HOODI_CHAIN_ID}`
+                  : "You can skip wallet onboarding for now, but future Web3 features will require a linked wallet."}
               </p>
             </div>
             <div className="my-page__wallet-actions">
