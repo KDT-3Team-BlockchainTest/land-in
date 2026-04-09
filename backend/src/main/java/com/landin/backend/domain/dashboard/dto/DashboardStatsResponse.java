@@ -12,4 +12,7 @@ public class DashboardStatsResponse {
     private long countryCount;        // 참여한 이벤트의 국가 수 (distinct)
     private long completedCollectionCount;
     private long activeCollectionsCount; // ongoing 상태 컬렉션 수
+
+    @Builder.Default
+    private String totalDistanceLabel = "— km";
 }
