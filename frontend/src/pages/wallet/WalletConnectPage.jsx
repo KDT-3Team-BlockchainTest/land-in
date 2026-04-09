@@ -1,9 +1,16 @@
 import "./WalletConnectPage.css";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { walletApi } from "../../api/wallet";
 import { useAuth } from "../../contexts/useAuth";
-import { connectMetaMaskWallet, formatWalletAddress, HOODI_CHAIN_ID } from "../../utils/wallet";
+import {
+  connectMetaMaskWallet,
+  formatWalletAddress,
+  HOODI_CHAIN_ID,
+  META_MASK_MOBILE_CONNECT_QUERY,
+  openMetaMaskMobileBrowser,
+  shouldUseMetaMaskMobileRedirect,
+} from "../../utils/wallet";
 
 function WalletIcon() {
   return (
@@ -41,6 +48,7 @@ export default function WalletConnectPage() {
   const { user, updateUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const autoConnectAttemptedRef = useRef(false);
 
   const nextPath = location.state?.nextPath ?? "/";
 
@@ -49,6 +57,11 @@ export default function WalletConnectPage() {
   };
 
   const handleConnectWallet = async () => {
+    if (shouldUseMetaMaskMobileRedirect()) {
+      openMetaMaskMobileBrowser();
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -68,6 +81,18 @@ export default function WalletConnectPage() {
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const shouldAutoConnect = params.get(META_MASK_MOBILE_CONNECT_QUERY) === "1";
+
+    if (!shouldAutoConnect || autoConnectAttemptedRef.current || user?.walletAddress) {
+      return;
+    }
+
+    autoConnectAttemptedRef.current = true;
+    handleConnectWallet();
+  }, [location.search, user?.walletAddress]);
+
   return (
     <div className="wallet-connect-page">
       <main className="wallet-connect-page__content">
@@ -81,7 +106,7 @@ export default function WalletConnectPage() {
           </h1>
           <p className="wallet-connect-page__description">
             Land-in uses Hoodi testnet wallet connections for future on-chain NFT minting. On mobile browsers, this
-            flow opens the MetaMask app so you can approve the same wallet on your phone.
+            flow opens the MetaMask app and continues inside the MetaMask browser on your phone.
           </p>
         </section>
 
@@ -89,6 +114,7 @@ export default function WalletConnectPage() {
           <h2>Before you connect</h2>
           <ul>
             <li>On desktop, Land-in uses your installed wallet. On mobile, it opens MetaMask for approval.</li>
+            <li>If you start in Android Chrome or Safari, Land-in moves you into the MetaMask in-app browser first.</li>
             <li>Wallet linking stores the address this account will use for future blockchain actions.</li>
             <li>You can skip this step now and reconnect the same wallet or a different wallet later.</li>
           </ul>
