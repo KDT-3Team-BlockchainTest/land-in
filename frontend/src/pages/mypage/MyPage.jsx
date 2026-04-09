@@ -8,7 +8,7 @@ import ProfileAchievementCard from "../../components/common/ProfileAchievementCa
 import ProfileMenuCard from "../../components/common/ProfileMenuCard/ProfileMenuCard";
 import { getAchievementItems, settingsItems } from "../../data/profile";
 import { useAuth } from "../../contexts/useAuth";
-import { formatWalletAddress, HOODI_CHAIN_ID } from "../../utils/wallet";
+import { disconnectWalletSession, formatWalletAddress, HOODI_CHAIN_ID } from "../../utils/wallet";
 
 function travelStats(profileSummary) {
   return [
@@ -92,6 +92,7 @@ export default function MyPage() {
     try {
       const profile = await walletApi.disconnect();
       updateUserProfile(profile);
+      await disconnectWalletSession().catch(() => {});
     } catch (error) {
       window.alert(error.message || "Failed to disconnect the wallet.");
     } finally {
