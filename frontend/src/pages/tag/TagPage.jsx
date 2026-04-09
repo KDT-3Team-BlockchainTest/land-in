@@ -1,6 +1,6 @@
 import "./TagPage.css";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { adaptCollection } from "../../api/adapters";
 import { collectionsApi } from "../../api/collections";
 import { nfcApi } from "../../api/nfc";
@@ -207,12 +207,14 @@ async function readTagValueFromDevice() {
 
 export default function TagPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [collections, setCollections] = useState([]);
   const [phase, setPhase] = useState("ready");
   const [tagUid, setTagUid] = useState("");
   const [mintedNft, setMintedNft] = useState(null);
   const [mintError, setMintError] = useState("");
   const [nfcReading, setNfcReading] = useState(false);
+  const lastAutoVerifiedTagRef = useRef("");
 
   useEffect(() => {
     collectionsApi
@@ -220,6 +222,18 @@ export default function TagPage() {
       .then((list) => setCollections((list ?? []).map((collection) => adaptCollection(collection))))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const tagUidFromQuery = searchParams.get("tagUid")?.trim();
+    if (!tagUidFromQuery) return;
+    if (phase !== "ready") return;
+    if (lastAutoVerifiedTagRef.current === tagUidFromQuery) return;
+
+    lastAutoVerifiedTagRef.current = tagUidFromQuery;
+    setMintError("");
+    setTagUid(tagUidFromQuery);
+    setPhase("scanning");
+  }, [phase, searchParams]);
 
   useEffect(() => {
     if (phase !== "scanning") return;
