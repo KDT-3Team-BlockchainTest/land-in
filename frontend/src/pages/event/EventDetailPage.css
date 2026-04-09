@@ -1,0 +1,17 @@
+.event-detail-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.event-detail-page__hero-wrap {
+  margin-top: 56px;
+}
+
+.event-detail-page__content {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

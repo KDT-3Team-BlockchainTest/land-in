@@ -1,0 +1,263 @@
+.my-page__profile-card {
+  overflow: hidden;
+  border-radius: 28px;
+  background: linear-gradient(160deg, var(--color-surface) 0%, #fff8f8 100%);
+  box-shadow: 0 4px 24px rgba(254, 107, 112, 0.12);
+  border: 1px solid rgba(254, 107, 112, 0.1);
+}
+
+.my-page__profile-accent {
+  height: 6px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, #ff9a6c 100%);
+}
+
+.my-page__profile-body {
+  padding: 18px;
+}
+
+.my-page__profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.my-page__avatar {
+  width: 62px;
+  height: 62px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(254, 107, 112, 0.12), rgba(255, 154, 108, 0.18));
+  border: 2px solid rgba(254, 107, 112, 0.18);
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.my-page__identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.my-page__name {
+  margin: 0 0 4px;
+  color: var(--color-gray-900);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.my-page__handle {
+  margin: 0;
+  color: var(--color-gray-400);
+  font-size: 12px;
+}
+
+.my-page__level {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-primary), #ff9a6c);
+  color: var(--color-surface);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(254, 107, 112, 0.25);
+}
+
+.my-page__profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.my-page__mini-stat {
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.my-page__mini-stat.is-coral {
+  background: var(--color-primary-soft);
+  border: 1px solid rgba(254, 107, 112, 0.12);
+}
+
+.my-page__mini-stat.is-violet {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.my-page__mini-value {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.my-page__mini-stat.is-coral .my-page__mini-value {
+  color: var(--color-primary);
+}
+
+.my-page__mini-stat.is-violet .my-page__mini-value {
+  color: var(--color-violet);
+}
+
+.my-page__mini-label {
+  margin: 0;
+  color: var(--color-gray-500);
+  font-size: 11px;
+}
+
+.my-page__travel-card {
+  padding: 18px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.my-page__section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.my-page__section-title {
+  margin: 0 0 4px;
+  color: var(--color-gray-900);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.my-page__section-description {
+  margin: 0;
+  color: var(--color-gray-400);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.my-page__year-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(254, 107, 112, 0.1);
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.my-page__travel-list {
+  margin-top: 14px;
+}
+
+.my-page__travel-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.my-page__travel-item + .my-page__travel-item {
+  border-top: 1px solid var(--color-gray-100);
+}
+
+.my-page__travel-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.my-page__travel-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.my-page__travel-label {
+  margin: 0 0 2px;
+  color: var(--color-gray-900);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.my-page__travel-description {
+  margin: 0;
+  color: var(--color-gray-400);
+  font-size: 11px;
+}
+
+.my-page__travel-value-wrap {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.my-page__travel-value {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.my-page__travel-unit {
+  margin-left: 4px;
+  color: var(--color-gray-400);
+  font-size: 11px;
+}
+
+.my-page__achievement-section,
+.my-page__menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.my-page__achievement-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.my-page__achievement-track {
+  width: 80px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eceff3;
+}
+
+.my-page__achievement-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), #ff9a6c);
+}
+
+.my-page__achievement-percent {
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.my-page__achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.my-page__logout {
+  border: 0;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.my-page__footer {
+  margin: -4px 0 0;
+  color: var(--color-gray-300);
+  font-size: 10px;
+  text-align: center;
+}

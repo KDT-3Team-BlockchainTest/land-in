@@ -1,0 +1,118 @@
+.active-event-card {
+  width: 260px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+}
+
+.active-event-card__image-wrap {
+  position: relative;
+  height: 128px;
+  overflow: hidden;
+}
+
+.active-event-card__image,
+.active-event-card__image-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.active-event-card__image {
+  object-fit: cover;
+}
+
+.active-event-card__image-overlay {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 25%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.active-event-card__badge,
+.active-event-card__timer,
+.active-event-card__flag {
+  position: absolute;
+  z-index: 1;
+}
+
+.active-event-card__badge {
+  top: 10px;
+  left: 10px;
+}
+
+.active-event-card__timer {
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.active-event-card__flag {
+  bottom: 10px;
+  left: 10px;
+  font-size: 16px;
+}
+
+.active-event-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.active-event-card__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.active-event-card__title {
+  margin: 0;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.active-event-card__location {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.active-event-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.active-event-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fe6b70 0%, #ff9a6c 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.active-event-card__cta.is-joined {
+  border: 1px solid rgba(254, 107, 112, 0.392); 
+  background: rgba(255, 128, 132, 0.046);
+  color: #fe6b70;
+}

@@ -1,0 +1,61 @@
+/* login.css의 기본 구조를 상속받거나 동일하게 사용합니다 */
+@import './Login.css';
+
+.join-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #f9f9f9;
+  box-sizing: border-box;
+}
+
+.terms-box {
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.terms-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.terms-item:last-child {
+  margin-bottom: 0;
+}
+
+.terms-item label {
+  flex: 1;
+  margin-left: 10px;
+  color: #444;
+}
+
+.terms-item label span {
+  color: #fe6b70;
+  margin-right: 4px;
+}
+
+.view-link {
+  color: #999;
+  text-decoration: underline;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.all-agree {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: #eee;
+  margin-bottom: 15px;
+}

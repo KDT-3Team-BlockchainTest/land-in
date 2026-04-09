@@ -1,0 +1,57 @@
+/* Home uses page-layout for the wrapper.
+   Its content area has a different top-padding and gap from the shared shell,
+   so it keeps its own __content class. */
+.home-page__content {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 80px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.home-page__intro {
+  padding-top: 4px;
+}
+
+.home-page__greeting {
+  margin: 0 0 4px;
+  color: var(--color-gray-400);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.home-page__greeting span {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.home-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-page__active-scroller {
+  overflow-x: auto;
+  margin-inline: -16px;
+  padding-inline: 16px;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.home-page__active-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.home-page__active-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+}
+
+.home-page__upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
