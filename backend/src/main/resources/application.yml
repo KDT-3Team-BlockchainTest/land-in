@@ -21,5 +21,18 @@ logging:
     "[com.landin.backend]": DEBUG
 
 app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
   cors:
     allowed-origin-patterns: http://localhost:5173,http://localhost:3000
+
+blockchain:
+  enabled: ${BLOCKCHAIN_ENABLED:false}
+  chain-id: ${BLOCKCHAIN_CHAIN_ID:560048}
+  rpc-url: ${BLOCKCHAIN_RPC_URL:https://rpc.hoodi.ethpandaops.io}
+  contract-address: ${BLOCKCHAIN_CONTRACT_ADDRESS:}
+  minter-private-key: ${BLOCKCHAIN_MINTER_PRIVATE_KEY:}
+  mint-function-name: ${BLOCKCHAIN_MINT_FUNCTION_NAME:safeMint}
+  gas-price-wei: ${BLOCKCHAIN_GAS_PRICE_WEI:}
+  gas-limit: ${BLOCKCHAIN_GAS_LIMIT:500000}
+  receipt-poll-attempts: ${BLOCKCHAIN_RECEIPT_POLL_ATTEMPTS:20}
+  receipt-poll-interval-millis: ${BLOCKCHAIN_RECEIPT_POLL_INTERVAL_MILLIS:3000}

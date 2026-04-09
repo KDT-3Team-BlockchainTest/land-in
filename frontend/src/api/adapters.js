@@ -163,6 +163,14 @@ export function adaptNft(nft) {
     rarity: nft.rarity?.toLowerCase(),
     eventId: nft.eventId,
     mintedAt: nft.mintedAt,
+    mintStatus: nft.mintStatus,
+    onChainChainId: nft.onChainChainId,
+    contractAddress: nft.contractAddress,
+    tokenUri: nft.tokenUri,
+    tokenId: nft.tokenId,
+    transactionHash: nft.transactionHash,
+    onChainMintedAt: nft.onChainMintedAt,
+    mintFailureReason: nft.mintFailureReason,
   };
 }
 
