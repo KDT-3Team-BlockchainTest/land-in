@@ -23,6 +23,11 @@ const SUPPORTED_NETWORKS = {
 
 let metaMaskClientPromise = null;
 
+function isMobileBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 function resolveInjectedProvider() {
   if (typeof window === "undefined") return null;
 
@@ -51,6 +56,8 @@ async function getMetaMaskClient() {
   }
 
   if (!metaMaskClientPromise) {
+    const mobileBrowser = isMobileBrowser();
+
     metaMaskClientPromise = createEVMClient({
       dapp: {
         name: "Land-in",
@@ -61,11 +68,14 @@ async function getMetaMaskClient() {
         supportedNetworks: SUPPORTED_NETWORKS,
       },
       ui: {
-        preferExtension: true,
-        showInstallModal: true,
+        preferExtension: !mobileBrowser,
+        showInstallModal: !mobileBrowser,
       },
       mobile: {
         useDeeplink: true,
+        preferredOpenLink: (deeplink) => {
+          window.location.assign(deeplink);
+        },
       },
       debug: Boolean(import.meta.env.DEV),
     }).catch((error) => {
