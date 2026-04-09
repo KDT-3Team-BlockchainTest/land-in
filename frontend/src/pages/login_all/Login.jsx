@@ -24,8 +24,11 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(form.email, form.password);
-      navigate("/", { replace: true });
+      const profile = await login(form.email, form.password);
+      navigate(profile.walletAddress ? "/" : "/wallet/connect", {
+        replace: true,
+        state: { nextPath: "/" },
+      });
     } catch (err) {
       setError(err.message || "Failed to sign in.");
     } finally {

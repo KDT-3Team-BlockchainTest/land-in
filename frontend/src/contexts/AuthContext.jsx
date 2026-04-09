@@ -14,13 +14,26 @@ function loadInitialUser() {
   return null;
 }
 
+function normalizeProfile(data) {
+  return {
+    id: data.id,
+    email: data.email,
+    displayName: data.displayName,
+    avatarUrl: data.avatarUrl,
+    walletAddress: data.walletAddress ?? null,
+    walletChainId: data.walletChainId ?? null,
+    walletProvider: data.walletProvider ?? null,
+    walletConnectedAt: data.walletConnectedAt ?? null,
+  };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadInitialUser);
 
   const login = useCallback(async (email, password) => {
     const data = await authApi.login({ email, password });
     localStorage.setItem("land-in-token", data.accessToken);
-    const profile = { id: data.id, email: data.email, displayName: data.displayName, avatarUrl: data.avatarUrl };
+    const profile = normalizeProfile(data);
     localStorage.setItem("land-in-user", JSON.stringify(profile));
     resetNfcPromptDismissal();
     setUser(profile);
@@ -30,11 +43,18 @@ export function AuthProvider({ children }) {
   const signup = useCallback(async (email, password, displayName) => {
     const data = await authApi.signup({ email, password, displayName });
     localStorage.setItem("land-in-token", data.accessToken);
-    const profile = { id: data.id, email: data.email, displayName: data.displayName, avatarUrl: data.avatarUrl };
+    const profile = normalizeProfile(data);
     localStorage.setItem("land-in-user", JSON.stringify(profile));
     resetNfcPromptDismissal();
     setUser(profile);
     return profile;
+  }, []);
+
+  const updateUserProfile = useCallback((profile) => {
+    const nextUser = normalizeProfile(profile);
+    localStorage.setItem("land-in-user", JSON.stringify(nextUser));
+    setUser(nextUser);
+    return nextUser;
   }, []);
 
   const logout = useCallback(() => {
@@ -45,7 +65,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, updateUserProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

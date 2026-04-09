@@ -3,6 +3,7 @@ package com.landin.backend.domain.user.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -12,5 +13,9 @@ public class AuthResponse {
     private String email;
     private String displayName;
     private String avatarUrl;
+    private String walletAddress;
+    private Long walletChainId;
+    private String walletProvider;
+    private LocalDateTime walletConnectedAt;
     private String accessToken;
 }
