@@ -38,7 +38,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Profile("local")
+//@Profile("local")
 public class DataInitializer implements CommandLineRunner {
 
     private static final String DEMO_EMAIL = "demo@landin.local";

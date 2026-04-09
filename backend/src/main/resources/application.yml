@@ -1,4 +1,7 @@
 spring:
+  profiles:
+    active: local
+
   datasource:
     url: jdbc:mysql://localhost:3306/landin_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root

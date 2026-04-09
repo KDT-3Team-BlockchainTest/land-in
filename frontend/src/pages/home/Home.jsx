@@ -9,7 +9,7 @@ import MoreEventsCard from "../../components/common/MoreEventsCard/MoreEventsCar
 import ProgressBanner from "../../components/common/ProgressBanner/ProgressBanner";
 import SectionHeader from "../../components/common/SectionHeader/SectionHeader";
 import UpcomingEventCard from "../../components/common/UpcomingEventCard/UpcomingEventCard";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/useAuth";
 import useJoinedEventIds from "../../hooks/useJoinedEventIds";
 
 export default function Home() {
@@ -28,6 +28,7 @@ export default function Home() {
   const upcomingEvents = adapted.filter((e) => e.status === 'upcoming');
 
   const ongoingCount = joinedEventIds.length;
+  // eslint-disable-next-line no-unused-vars
   const nftCount = 0; // 대시보드에서 관리
 
   return (

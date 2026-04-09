@@ -1,6 +1,5 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
-import App from "./App";
-import { useAuth } from "./contexts/AuthContext";
+import { createBrowserRouter } from "react-router-dom";
+import RequireAuth from "./components/auth/RequireAuth";
 import LoginPage from "./pages/auth/LoginPage";
 import CollectionPage from "./pages/collection/CollectionPage";
 import EventDetailPage from "./pages/event/EventDetailPage";
@@ -11,12 +10,6 @@ import NftGalleryPage from "./pages/nftGallery/NftGalleryPage";
 import RewardsPage from "./pages/rewards/RewardsPage";
 import TagPage from "./pages/tag/TagPage";
 
-function RequireAuth({ children }) {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  return children;
-}
-
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -24,11 +17,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: (
-      <RequireAuth>
-        <App />
-      </RequireAuth>
-    ),
+    element: <RequireAuth />,
     children: [
       { index: true, element: <HomePage /> },
       { path: "collection", element: <CollectionPage /> },

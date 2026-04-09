@@ -68,6 +68,7 @@ public class DashboardService {
                 .countryCount(countryCount)
                 .completedCollectionCount(completedCollectionCount)
                 .activeCollectionsCount(activeCollectionsCount)
+                .totalDistanceLabel("0 km")
                 .build();
     }
 }
