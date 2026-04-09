@@ -109,11 +109,19 @@ function parseTagValueFromUrl(value) {
   return value.trim();
 }
 
+function decodeTextRecord(record) {
+  const rawValue = new TextDecoder(record.encoding || "utf-8").decode(record.data).trim();
+  if (/^TAG-[A-Z0-9-]+$/i.test(rawValue)) {
+    return rawValue;
+  }
+  return "";
+}
+
 function decodeRecordValue(record) {
   if (!record?.data) return "";
 
   if (record.recordType === "text") {
-    return new TextDecoder(record.encoding || "utf-8").decode(record.data).trim();
+    return decodeTextRecord(record);
   }
 
   if (record.recordType === "url" || record.recordType === "absolute-url") {
@@ -124,6 +132,18 @@ function decodeRecordValue(record) {
     try {
       const payload = JSON.parse(new TextDecoder().decode(record.data));
       if (typeof payload.tagUid === "string") return payload.tagUid.trim();
+    } catch {
+      return "";
+    }
+  }
+
+  if (typeof record.toRecords === "function") {
+    try {
+      const nestedRecords = record.toRecords();
+      for (const nestedRecord of nestedRecords) {
+        const nestedValue = decodeRecordValue(nestedRecord);
+        if (nestedValue) return nestedValue;
+      }
     } catch {
       return "";
     }
