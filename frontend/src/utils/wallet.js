@@ -1,5 +1,8 @@
+import { createEVMClient } from "@metamask/connect-evm";
+
 export const HOODI_CHAIN_ID = 560048;
 export const HOODI_CHAIN_ID_HEX = `0x${HOODI_CHAIN_ID.toString(16)}`;
+const ETHEREUM_MAINNET_CHAIN_ID_HEX = "0x1";
 
 const HOODI_CHAIN_CONFIG = {
   chainId: HOODI_CHAIN_ID_HEX,
@@ -13,14 +16,65 @@ const HOODI_CHAIN_CONFIG = {
   blockExplorerUrls: ["https://hoodi.etherscan.io"],
 };
 
-export function getEthereumProvider() {
+const SUPPORTED_NETWORKS = {
+  [ETHEREUM_MAINNET_CHAIN_ID_HEX]: "https://ethereum-rpc.publicnode.com",
+  [HOODI_CHAIN_ID_HEX]: HOODI_CHAIN_CONFIG.rpcUrls[0],
+};
+
+let metaMaskClientPromise = null;
+
+function resolveInjectedProvider() {
   if (typeof window === "undefined") return null;
-  return window.ethereum ?? null;
+
+  const provider = window.ethereum ?? null;
+  if (!provider) return null;
+
+  if (Array.isArray(provider.providers) && provider.providers.length > 0) {
+    return provider.providers.find((candidate) => candidate?.isMetaMask) ?? provider.providers[0];
+  }
+
+  return provider;
+}
+
+export function getEthereumProvider() {
+  return resolveInjectedProvider();
 }
 
 export function formatWalletAddress(walletAddress) {
   if (!walletAddress) return "";
   return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+}
+
+async function getMetaMaskClient() {
+  if (typeof window === "undefined") {
+    throw new Error("Wallet connections are only available in a browser.");
+  }
+
+  if (!metaMaskClientPromise) {
+    metaMaskClientPromise = createEVMClient({
+      dapp: {
+        name: "Land-in",
+        url: window.location.origin,
+        iconUrl: `${window.location.origin}/icon_logo_test1.png`,
+      },
+      api: {
+        supportedNetworks: SUPPORTED_NETWORKS,
+      },
+      ui: {
+        preferExtension: true,
+        showInstallModal: true,
+      },
+      mobile: {
+        useDeeplink: true,
+      },
+      debug: Boolean(import.meta.env.DEV),
+    }).catch((error) => {
+      metaMaskClientPromise = null;
+      throw error;
+    });
+  }
+
+  return metaMaskClientPromise;
 }
 
 async function ensureHoodiNetwork(provider) {
@@ -46,12 +100,9 @@ async function ensureHoodiNetwork(provider) {
   }
 }
 
-export async function connectInjectedWallet() {
-  const provider = getEthereumProvider();
+export async function connectInjectedWallet(provider = getEthereumProvider()) {
   if (!provider) {
-    const error = new Error(
-      "이 브라우저에서는 지갑이 감지되지 않았습니다. MetaMask 같은 지갑이 설치된 환경에서 다시 시도해 주세요.",
-    );
+    const error = new Error("No wallet was detected in this browser. Install MetaMask or open the page in MetaMask.");
     error.code = "NO_PROVIDER";
     throw error;
   }
@@ -61,7 +112,7 @@ export async function connectInjectedWallet() {
   const accounts = await provider.request({ method: "eth_requestAccounts" });
   const walletAddress = accounts?.[0];
   if (!walletAddress) {
-    throw new Error("지갑 주소를 확인하지 못했습니다.");
+    throw new Error("Could not read the connected wallet address.");
   }
 
   const chainIdHex = await provider.request({ method: "eth_chainId" });
@@ -69,6 +120,47 @@ export async function connectInjectedWallet() {
   return {
     walletAddress,
     chainId: Number.parseInt(chainIdHex, 16),
-    walletProvider: "injected",
+    walletProvider: provider.isMetaMask ? "metamask" : "injected",
   };
+}
+
+export async function connectMetaMaskWallet() {
+  const injectedProvider = getEthereumProvider();
+  if (injectedProvider) {
+    return connectInjectedWallet(injectedProvider);
+  }
+
+  const client = await getMetaMaskClient();
+  const { accounts } = await client.connect({
+    chainIds: [HOODI_CHAIN_ID_HEX],
+  });
+
+  const provider = client.getProvider();
+  await ensureHoodiNetwork(provider);
+
+  const walletAddress = accounts?.[0];
+  if (!walletAddress) {
+    throw new Error("Could not read the connected MetaMask account.");
+  }
+
+  const chainIdHex = await provider.request({ method: "eth_chainId" });
+
+  return {
+    walletAddress,
+    chainId: Number.parseInt(chainIdHex, 16),
+    walletProvider: "metamask",
+  };
+}
+
+export async function disconnectWalletSession() {
+  if (!metaMaskClientPromise) {
+    return;
+  }
+
+  try {
+    const client = await metaMaskClientPromise;
+    await client.disconnect();
+  } finally {
+    metaMaskClientPromise = null;
+  }
 }
