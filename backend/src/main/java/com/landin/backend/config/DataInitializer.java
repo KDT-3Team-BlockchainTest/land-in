@@ -39,7 +39,7 @@ import java.util.Objects;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Profile("local")
+@Profile({"local", "prod", "production"})
 public class DataInitializer implements CommandLineRunner {
 
     private static final String DEMO_EMAIL = "demo@landin.local";
@@ -72,7 +72,7 @@ public class DataInitializer implements CommandLineRunner {
 
         List<EventSeed> seeds = catalogSeeds();
         seeds.forEach(this::seedEvent);
-        log.info("[DataInitializer] Seeded {} events for local development.", seeds.size());
+        log.info("[DataInitializer] Seeded {} events during application startup.", seeds.size());
     }
 
     private void seedDemoUserIfMissing() {
