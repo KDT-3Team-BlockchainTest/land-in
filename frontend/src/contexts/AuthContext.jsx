@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { authApi } from "../api/auth";
 import AuthContext from "./auth-context";
+import { resetNfcPromptDismissal } from "../utils/nfcPermission";
 
 function loadInitialUser() {
   try {
@@ -21,6 +22,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem("land-in-token", data.accessToken);
     const profile = { id: data.id, email: data.email, displayName: data.displayName, avatarUrl: data.avatarUrl };
     localStorage.setItem("land-in-user", JSON.stringify(profile));
+    resetNfcPromptDismissal();
     setUser(profile);
     return profile;
   }, []);
@@ -30,6 +32,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem("land-in-token", data.accessToken);
     const profile = { id: data.id, email: data.email, displayName: data.displayName, avatarUrl: data.avatarUrl };
     localStorage.setItem("land-in-user", JSON.stringify(profile));
+    resetNfcPromptDismissal();
     setUser(profile);
     return profile;
   }, []);
@@ -37,6 +40,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem("land-in-token");
     localStorage.removeItem("land-in-user");
+    resetNfcPromptDismissal();
     setUser(null);
   }, []);
 
