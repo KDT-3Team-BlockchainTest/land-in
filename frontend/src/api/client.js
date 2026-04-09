@@ -1,4 +1,5 @@
-const BASE_URL = '/api';
+const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const BASE_URL = RAW_BASE_URL.replace(/\/$/, "");
 
 function getToken() {
   return localStorage.getItem('land-in-token');
