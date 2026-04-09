@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,14 +59,18 @@ public class NfcService {
 
     @Transactional
     public NfcVerifyResponse verify(UUID userId, NfcVerifyRequest request) {
-        String tagUid = Objects.requireNonNull(request.getTagUid(), "Tag UID must not be null");
+        String rawTagValue = Objects.requireNonNull(request.getTagUid(), "Tag UID must not be null");
+        String tagUid = normalizeTagUid(rawTagValue);
         User user = Objects.requireNonNull(
                 userRepository.getReferenceById(Objects.requireNonNull(userId, "User id must not be null")),
                 "User reference must not be null"
         );
 
+        log.info("[NfcService] verify request received. userId={}, rawTagValue={}, normalizedTagUid={}", userId, rawTagValue, tagUid);
+
         NfcTag nfcTag = nfcTagRepository.findByTagUid(tagUid).orElse(null);
         if (nfcTag == null) {
+            log.warn("[NfcService] unknown tag. userId={}, rawTagValue={}, normalizedTagUid={}", userId, rawTagValue, tagUid);
             saveLog(user, tagUid, NfcScanResult.UNKNOWN_TAG);
             throw new BusinessException(ErrorCode.UNKNOWN_TAG);
         }
@@ -197,5 +202,27 @@ public class NfcService {
 
     private String generateCouponCode() {
         return "LI-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+    private String normalizeTagUid(String rawTagValue) {
+        String trimmed = rawTagValue.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+
+        try {
+            String queryTagUid = UriComponentsBuilder.fromUriString(trimmed)
+                    .build()
+                    .getQueryParams()
+                    .getFirst("tagUid");
+
+            if (queryTagUid != null && !queryTagUid.isBlank()) {
+                return queryTagUid.trim().toUpperCase();
+            }
+        } catch (IllegalArgumentException ignored) {
+            // not a valid URI, fall back to raw tag value
+        }
+
+        return trimmed.toUpperCase();
     }
 }

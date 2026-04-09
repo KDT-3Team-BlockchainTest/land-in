@@ -4,9 +4,11 @@ import com.landin.backend.domain.step.entity.Step;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface StepRepository extends JpaRepository<Step, UUID> {
     List<Step> findByEventIdOrderByOrderIndex(String eventId);
+    Optional<Step> findByEventIdAndOrderIndex(String eventId, int orderIndex);
     long countByEventId(String eventId);
 }

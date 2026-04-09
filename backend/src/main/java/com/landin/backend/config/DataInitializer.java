@@ -35,6 +35,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -60,19 +61,15 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        seedCatalogIfEmpty();
+        ensureCatalogSeeded();
         seedDemoUserIfMissing();
     }
 
-    private void seedCatalogIfEmpty() {
-        if (eventRepository.count() > 0) {
-            log.info("[DataInitializer] Event catalog already exists. Skipping catalog seed.");
-            return;
-        }
-
+    private void ensureCatalogSeeded() {
         List<EventSeed> seeds = catalogSeeds();
-        seeds.forEach(this::seedEvent);
-        log.info("[DataInitializer] Seeded {} events during application startup.", seeds.size());
+        seeds.forEach(this::ensureEventSeeded);
+        log.info("[DataInitializer] Catalog synchronization complete. events={}, steps={}, tags={}",
+                eventRepository.count(), stepRepository.count(), nfcTagRepository.count());
     }
 
     private void seedDemoUserIfMissing() {
@@ -115,89 +112,97 @@ public class DataInitializer implements CommandLineRunner {
         log.info("[DataInitializer] Demo user ready: {} / {}", DEMO_EMAIL, DEMO_PASSWORD);
     }
 
-    private void seedEvent(EventSeed seed) {
-        Event event = Objects.requireNonNull(
-                eventRepository.save(Objects.requireNonNull(
-                        Event.builder()
-                                .id(seed.id())
-                                .title(seed.title())
-                                .city(seed.city())
-                                .country(seed.country())
-                                .status(seed.status())
-                                .featured(seed.featured())
-                                .startDate(seed.startDate())
-                                .endDate(seed.endDate())
-                                .description(seed.description())
-                                .heroImageUrl(seed.heroImageUrl())
-                                .partnerName(seed.partnerName())
-                                .themeColor(seed.themeColor())
-                                .build(),
-                        "Event must not be null"
-                )),
-                "Saved event must not be null"
-        );
+    private void ensureEventSeeded(EventSeed seed) {
+        Event event = eventRepository.findById(seed.id())
+                .orElseGet(() -> Objects.requireNonNull(
+                        eventRepository.save(Objects.requireNonNull(
+                                Event.builder()
+                                        .id(seed.id())
+                                        .title(seed.title())
+                                        .city(seed.city())
+                                        .country(seed.country())
+                                        .status(seed.status())
+                                        .featured(seed.featured())
+                                        .startDate(seed.startDate())
+                                        .endDate(seed.endDate())
+                                        .description(seed.description())
+                                        .heroImageUrl(seed.heroImageUrl())
+                                        .partnerName(seed.partnerName())
+                                        .themeColor(seed.themeColor())
+                                        .build(),
+                                "Event must not be null"
+                        )),
+                        "Saved event must not be null"
+                ));
 
-        seed.steps().forEach(stepSeed -> seedStep(event, stepSeed));
+        seed.steps().forEach(stepSeed -> ensureStepSeeded(event, stepSeed));
 
-        Objects.requireNonNull(
-                rewardTemplateRepository.save(Objects.requireNonNull(
-                        RewardTemplate.builder()
-                                .event(event)
-                                .title(seed.reward().title())
-                                .description(seed.reward().description())
-                                .partnerName(seed.reward().partnerName())
-                                .howToUse(seed.reward().howToUse())
-                                .validityDays(seed.reward().validityDays())
-                                .emoji(seed.reward().emoji())
-                                .accentColor(seed.reward().accentColor())
-                                .build(),
-                        "Reward template must not be null"
-                )),
-                "Saved reward template must not be null"
-        );
+        if (rewardTemplateRepository.findByEventId(seed.id()).isEmpty()) {
+            Objects.requireNonNull(
+                    rewardTemplateRepository.save(Objects.requireNonNull(
+                            RewardTemplate.builder()
+                                    .event(event)
+                                    .title(seed.reward().title())
+                                    .description(seed.reward().description())
+                                    .partnerName(seed.reward().partnerName())
+                                    .howToUse(seed.reward().howToUse())
+                                    .validityDays(seed.reward().validityDays())
+                                    .emoji(seed.reward().emoji())
+                                    .accentColor(seed.reward().accentColor())
+                                    .build(),
+                            "Reward template must not be null"
+                    )),
+                    "Saved reward template must not be null"
+            );
+        }
     }
 
-    private void seedStep(Event event, StepSeed seed) {
-        Step step = Objects.requireNonNull(
-                stepRepository.save(Objects.requireNonNull(
-                        Step.builder()
-                                .event(event)
-                                .orderIndex(seed.orderIndex())
-                                .placeName(seed.placeName())
-                                .placeDescription(seed.placeDescription())
-                                .imageUrl(seed.imageUrl())
-                                .finalStep(seed.finalStep())
-                                .build(),
-                        "Step must not be null"
-                )),
-                "Saved step must not be null"
-        );
+    private void ensureStepSeeded(Event event, StepSeed seed) {
+        Step step = stepRepository.findByEventIdAndOrderIndex(event.getId(), seed.orderIndex())
+                .orElseGet(() -> Objects.requireNonNull(
+                        stepRepository.save(Objects.requireNonNull(
+                                Step.builder()
+                                        .event(event)
+                                        .orderIndex(seed.orderIndex())
+                                        .placeName(seed.placeName())
+                                        .placeDescription(seed.placeDescription())
+                                        .imageUrl(seed.imageUrl())
+                                        .finalStep(seed.finalStep())
+                                        .build(),
+                                "Step must not be null"
+                        )),
+                        "Saved step must not be null"
+                ));
 
-        Objects.requireNonNull(
-                nfcTagRepository.save(Objects.requireNonNull(
-                        NfcTag.builder()
-                                .step(step)
-                                .tagUid(seed.tagUid())
-                                .active(true)
-                                .build(),
-                        "NFC tag must not be null"
-                )),
-                "Saved NFC tag must not be null"
-        );
+        if (nfcTagRepository.findByTagUid(seed.tagUid()).isEmpty()) {
+            Objects.requireNonNull(
+                    nfcTagRepository.save(Objects.requireNonNull(
+                            NfcTag.builder()
+                                    .step(step)
+                                    .tagUid(seed.tagUid())
+                                    .active(true)
+                                    .build(),
+                            "NFC tag must not be null"
+                    )),
+                    "Saved NFC tag must not be null"
+            );
+        }
 
-        Objects.requireNonNull(
-                nftTemplateRepository.save(Objects.requireNonNull(
-                        NftTemplate.builder()
-                                .step(step)
-                                .name(seed.nftName())
-                                .imageUrl(seed.imageUrl())
-                                .rarity(seed.rarity())
-                                .description(seed.nftDescription())
-                                .build(),
-                        "NFT template must not be null"
-                )),
-                "Saved NFT template must not be null"
-        );
+        if (nftTemplateRepository.findByStepId(step.getId()).isEmpty()) {
+            Objects.requireNonNull(
+                    nftTemplateRepository.save(Objects.requireNonNull(
+                            NftTemplate.builder()
+                                    .step(step)
+                                    .name(seed.nftName())
+                                    .imageUrl(seed.imageUrl())
+                                    .rarity(seed.rarity())
+                                    .description(seed.nftDescription())
+                                    .build(),
+                            "NFT template must not be null"
+                    )),
+                    "Saved NFT template must not be null"
+            );
+        }
     }
 
     private void joinEvent(User user, String eventId, LocalDateTime joinedAt) {
