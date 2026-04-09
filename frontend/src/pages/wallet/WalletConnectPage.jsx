@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { walletApi } from "../../api/wallet";
 import { useAuth } from "../../contexts/useAuth";
-import { connectInjectedWallet, formatWalletAddress, HOODI_CHAIN_ID } from "../../utils/wallet";
+import { connectMetaMaskWallet, formatWalletAddress, HOODI_CHAIN_ID } from "../../utils/wallet";
 
 function WalletIcon() {
   return (
@@ -31,6 +31,7 @@ function formatWalletError(error) {
   if (!error) return "A problem occurred while connecting the wallet.";
   if (error.code === "NO_PROVIDER") return error.message;
   if (error.code === 4001) return "The wallet connection request was cancelled.";
+  if (error.code === -32002) return "A MetaMask connection request is already waiting for approval.";
   return error.message || "A problem occurred while connecting the wallet.";
 }
 
@@ -52,7 +53,7 @@ export default function WalletConnectPage() {
     setError("");
 
     try {
-      const wallet = await connectInjectedWallet();
+      const wallet = await connectMetaMaskWallet();
       if (wallet.chainId !== HOODI_CHAIN_ID) {
         throw new Error("Please switch to the Hoodi testnet and try again.");
       }
@@ -76,20 +77,20 @@ export default function WalletConnectPage() {
             <WalletIcon />
           </div>
           <h1 className="wallet-connect-page__title">
-            Connect a wallet to unlock the full Land-in experience
+            Connect MetaMask to unlock the full Land-in experience
           </h1>
           <p className="wallet-connect-page__description">
-            Land-in will use Hoodi testnet wallet connections for future on-chain NFT minting flows. You can skip this
-            for now, but some upcoming Web3 features will require a linked wallet.
+            Land-in uses Hoodi testnet wallet connections for future on-chain NFT minting. On mobile browsers, this
+            flow opens the MetaMask app so you can approve the same wallet on your phone.
           </p>
         </section>
 
         <section className="wallet-connect-page__notice-card">
           <h2>Before you connect</h2>
           <ul>
-            <li>Wallet linking stores the wallet address that this account will use for future blockchain actions.</li>
+            <li>On desktop, Land-in uses your installed wallet. On mobile, it opens MetaMask for approval.</li>
+            <li>Wallet linking stores the address this account will use for future blockchain actions.</li>
             <li>You can skip this step now and reconnect the same wallet or a different wallet later.</li>
-            <li>You can also disconnect the current wallet from My Page whenever needed.</li>
           </ul>
         </section>
 
@@ -117,7 +118,7 @@ export default function WalletConnectPage() {
             onClick={handleConnectWallet}
             disabled={loading}
           >
-            {loading ? "Connecting wallet..." : "Connect Wallet"}
+            {loading ? "Opening MetaMask..." : "Connect MetaMask"}
           </button>
           <button
             type="button"
