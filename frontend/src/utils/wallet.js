@@ -3,6 +3,7 @@ import { createEVMClient } from "@metamask/connect-evm";
 export const HOODI_CHAIN_ID = 560048;
 export const HOODI_CHAIN_ID_HEX = `0x${HOODI_CHAIN_ID.toString(16)}`;
 const ETHEREUM_MAINNET_CHAIN_ID_HEX = "0x1";
+export const META_MASK_MOBILE_CONNECT_QUERY = "mm_connect";
 
 const HOODI_CHAIN_CONFIG = {
   chainId: HOODI_CHAIN_ID_HEX,
@@ -26,6 +27,25 @@ let metaMaskClientPromise = null;
 function isMobileBrowser() {
   if (typeof navigator === "undefined") return false;
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+export function shouldUseMetaMaskMobileRedirect() {
+  return isMobileBrowser() && !getEthereumProvider();
+}
+
+export function buildMetaMaskMobileUrl(targetUrl = window.location.href) {
+  const normalizedUrl = targetUrl.replace(/^https?:\/\//, "");
+  return `https://metamask.app.link/dapp/${normalizedUrl}`;
+}
+
+export function openMetaMaskMobileBrowser() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.set(META_MASK_MOBILE_CONNECT_QUERY, "1");
+  window.location.assign(buildMetaMaskMobileUrl(nextUrl.toString()));
 }
 
 function resolveInjectedProvider() {
