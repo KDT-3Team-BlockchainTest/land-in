@@ -137,7 +137,8 @@ public class NfcService {
                 "User NFT must not be null"
         );
         userNft = Objects.requireNonNull(userNftRepository.save(userNft), "Saved user NFT must not be null");
-        onChainNftMintService.syncMintState(userNft);
+        onChainNftMintService.prepareMintState(userNft);
+        onChainNftMintService.scheduleMintAfterCommit(Objects.requireNonNull(userNft.getId(), "Saved user NFT id must not be null"));
 
         saveLog(user, tagUid, NfcScanResult.SUCCESS);
         UserReward issuedReward = checkAndIssueReward(userId, user, event);

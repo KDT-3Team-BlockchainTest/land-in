@@ -2,6 +2,7 @@ package com.landin.backend.domain.user.service;
 
 import com.landin.backend.common.exception.BusinessException;
 import com.landin.backend.common.exception.ErrorCode;
+import com.landin.backend.config.BlockchainProperties;
 import com.landin.backend.domain.nft.service.OnChainNftMintService;
 import com.landin.backend.domain.user.dto.AuthResponse;
 import com.landin.backend.domain.user.dto.LoginRequest;
@@ -23,12 +24,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
 
-    private static final long HOODI_CHAIN_ID = 560048L;
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final OnChainNftMintService onChainNftMintService;
+    private final BlockchainProperties blockchainProperties;
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
@@ -92,7 +92,7 @@ public class UserService {
 
     @Transactional
     public UserProfileResponse connectWallet(UUID userId, WalletConnectRequest request) {
-        if (!Objects.equals(request.getChainId(), HOODI_CHAIN_ID)) {
+        if (!Objects.equals(request.getChainId(), blockchainProperties.getChainId())) {
             throw new BusinessException(ErrorCode.INVALID_WALLET_NETWORK);
         }
 
@@ -105,7 +105,7 @@ public class UserService {
                 request.getWalletProvider() == null ? "injected" : request.getWalletProvider().trim()
         );
 
-        onChainNftMintService.retryMintsForUser(user);
+        onChainNftMintService.scheduleRetryAfterCommit(Objects.requireNonNull(user.getId(), "User id must not be null"));
         return UserProfileResponse.from(user);
     }
 
