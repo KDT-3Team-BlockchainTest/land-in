@@ -13,7 +13,7 @@ public enum ErrorCode {
 
     // Event
     EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "이벤트를 찾을 수 없습니다."),
-    EVENT_NOT_JOINABLE(HttpStatus.BAD_REQUEST, "참여할 수 없는 이벤트 상태입니다. (active 이벤트만 참여 가능)"),
+    EVENT_NOT_JOINABLE(HttpStatus.BAD_REQUEST, "참여할 수 없는 이벤트 상태입니다. active 이벤트만 참여 가능합니다."),
 
     // Participation
     ALREADY_JOINED(HttpStatus.CONFLICT, "이미 참여 중인 이벤트입니다."),
@@ -25,9 +25,12 @@ public enum ErrorCode {
     STEP_ALREADY_DONE(HttpStatus.CONFLICT, "이미 완료한 스텝입니다."),
     WRONG_ORDER(HttpStatus.BAD_REQUEST, "이전 스텝을 먼저 완료해야 합니다."),
 
+    // NFT
+    NFT_NOT_FOUND(HttpStatus.NOT_FOUND, "NFT를 찾을 수 없습니다."),
+
     // Reward
     REWARD_NOT_FOUND(HttpStatus.NOT_FOUND, "리워드를 찾을 수 없습니다."),
-    REWARD_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "사용할 수 없는 리워드입니다. (available 상태만 사용 가능)");
+    REWARD_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "사용할 수 없는 리워드입니다. available 상태만 사용 가능합니다.");
 
     private final HttpStatus status;
     private final String message;
