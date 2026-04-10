@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authApi } from "../api/auth";
 import { AuthContext } from "./auth-context";
 import { resetNfcPromptDismissal } from "../utils/nfcPermission";
@@ -107,6 +107,42 @@ export function AuthProvider({ children }) {
     resetNfcPromptDismissal();
     setUser(null);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncUserFromServer() {
+      const token = localStorage.getItem("land-in-token");
+      if (!token) return;
+
+      try {
+        const serverProfile = await authApi.me();
+        if (cancelled) return;
+        updateUserProfile(serverProfile);
+      } catch (error) {
+        if (cancelled) return;
+        if (error?.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        syncUserFromServer();
+      }
+    }
+
+    syncUserFromServer();
+    window.addEventListener("focus", syncUserFromServer);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", syncUserFromServer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [logout, updateUserProfile]);
 
   return (
     <AuthContext.Provider value={{ user, login, signup, updateUserProfile, logout }}>
