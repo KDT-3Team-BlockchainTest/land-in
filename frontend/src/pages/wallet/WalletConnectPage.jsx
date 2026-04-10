@@ -1,6 +1,7 @@
 import "./WalletConnectPage.css";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { authApi } from "../../api/auth";
 import { walletApi } from "../../api/wallet";
 import { useAuth } from "../../contexts/useAuth";
 import {
@@ -47,6 +48,7 @@ export default function WalletConnectPage() {
   const location = useLocation();
   const { user, updateUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [mobilePending, setMobilePending] = useState(false);
   const [error, setError] = useState("");
   const autoConnectAttemptedRef = useRef(false);
 
@@ -56,9 +58,30 @@ export default function WalletConnectPage() {
     navigate(nextPath, { replace: true });
   };
 
+  const syncProfileFromServer = useCallback(async () => {
+    try {
+      const profile = await authApi.me();
+      updateUserProfile(profile);
+
+      if (profile?.walletAddress) {
+        setMobilePending(false);
+        setLoading(false);
+        navigate(nextPath, { replace: true });
+        return true;
+      }
+    } catch {
+      // Ignore transient network/auth errors here and let the user retry manually.
+    }
+
+    return false;
+  }, [navigate, nextPath, updateUserProfile]);
+
   const handleConnectWallet = async () => {
     if (shouldUseMetaMaskMobileRedirect()) {
-      openMetaMaskMobileBrowser();
+      setError("");
+      setLoading(false);
+      setMobilePending(true);
+      openMetaMaskMobileBrowser({ preserveCurrentTab: true });
       return;
     }
 
@@ -80,6 +103,35 @@ export default function WalletConnectPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!mobilePending || user?.walletAddress) {
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 75;
+
+    const poll = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      const synced = await syncProfileFromServer();
+      if (synced || attempts >= maxAttempts) {
+        if (!synced) {
+          setMobilePending(false);
+        }
+        return;
+      }
+
+      window.setTimeout(poll, 2000);
+    };
+
+    poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [mobilePending, syncProfileFromServer, user?.walletAddress]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -136,21 +188,37 @@ export default function WalletConnectPage() {
         ) : null}
 
         {error ? <p className="wallet-connect-page__error">{error}</p> : null}
+        {mobilePending ? (
+          <p className="wallet-connect-page__error">
+            MetaMask approval is in progress. After approving in MetaMask, return to this tab and we will
+            sync automatically.
+          </p>
+        ) : null}
 
         <div className="wallet-connect-page__actions">
           <button
             type="button"
             className="wallet-connect-page__primary"
             onClick={handleConnectWallet}
-            disabled={loading}
+            disabled={loading || mobilePending}
           >
-            {loading ? "Opening MetaMask..." : "Connect MetaMask"}
+            {loading ? "Opening MetaMask..." : mobilePending ? "Waiting for approval..." : "Connect MetaMask"}
           </button>
+          {mobilePending ? (
+            <button
+              type="button"
+              className="wallet-connect-page__secondary"
+              onClick={syncProfileFromServer}
+              disabled={loading}
+            >
+              I approved, check again
+            </button>
+          ) : null}
           <button
             type="button"
             className="wallet-connect-page__secondary"
             onClick={handleSkip}
-            disabled={loading}
+            disabled={loading || mobilePending}
           >
             Skip for Now
           </button>
