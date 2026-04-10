@@ -23,7 +23,7 @@ logging:
 app:
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
   cors:
-    allowed-origin-patterns: http://localhost:5173,http://localhost:3000
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://localhost:3000}
 
 blockchain:
   enabled: ${BLOCKCHAIN_ENABLED:false}

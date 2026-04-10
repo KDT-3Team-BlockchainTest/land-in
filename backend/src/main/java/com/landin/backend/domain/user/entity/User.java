@@ -35,6 +35,26 @@ public class User extends BaseTimeEntity {
     private String walletProvider;
     private LocalDateTime walletConnectedAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private long nftCount = 0L;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private long landmarkCount = 0L;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private long cityCount = 0L;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private long countryCount = 0L;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private long completedCollectionCount = 0L;
+
     public void updateWalletConnection(String walletAddress, Long walletChainId, String walletProvider) {
         this.walletAddress = walletAddress;
         this.walletChainId = walletChainId;
@@ -47,5 +67,36 @@ public class User extends BaseTimeEntity {
         this.walletChainId = null;
         this.walletProvider = null;
         this.walletConnectedAt = null;
+    }
+
+    public void updateProfile(String displayName, String avatarUrl) {
+        this.displayName = displayName;
+        this.avatarUrl = avatarUrl;
+    }
+
+    public void updateStats(
+            long nftCount,
+            long landmarkCount,
+            long cityCount,
+            long countryCount,
+            long completedCollectionCount
+    ) {
+        this.nftCount = nftCount;
+        this.landmarkCount = landmarkCount;
+        this.cityCount = cityCount;
+        this.countryCount = countryCount;
+        this.completedCollectionCount = completedCollectionCount;
+    }
+
+    public void increaseLandmarkCount() {
+        this.landmarkCount++;
+    }
+
+    public void increaseNftCount() {
+        this.nftCount++;
+    }
+
+    public void increaseCompletedCollectionCount() {
+        this.completedCollectionCount++;
     }
 }

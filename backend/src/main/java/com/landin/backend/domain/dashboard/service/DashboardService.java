@@ -8,28 +8,36 @@ import com.landin.backend.domain.participation.entity.EventParticipation;
 import com.landin.backend.domain.participation.repository.EventParticipationRepository;
 import com.landin.backend.domain.step.repository.StepCompletionRepository;
 import com.landin.backend.domain.step.repository.StepRepository;
+import com.landin.backend.domain.user.entity.User;
+import com.landin.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
 
+    private final UserRepository userRepository;
     private final UserNftRepository userNftRepository;
     private final StepCompletionRepository stepCompletionRepository;
     private final EventParticipationRepository participationRepository;
     private final StepRepository stepRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public DashboardStatsResponse getStats(UUID userId) {
-        long nftCount = userNftRepository.countByUserId(userId);
-        long landmarkCount = stepCompletionRepository.countByUserId(userId);
+        UUID requiredUserId = Objects.requireNonNull(userId, "User id must not be null");
+        User user = userRepository.findById(requiredUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        List<EventParticipation> participations = participationRepository.findByUserId(userId);
+        long nftCount = userNftRepository.countByUserId(requiredUserId);
+        long landmarkCount = stepCompletionRepository.countByUserId(requiredUserId);
+
+        List<EventParticipation> participations = participationRepository.findByUserId(requiredUserId);
 
         long cityCount = participations.stream()
                 .map(ep -> ep.getEvent().getCity())
@@ -45,7 +53,7 @@ public class DashboardService {
                 .filter(ep -> {
                     String eventId = ep.getEvent().getId();
                     long total = stepRepository.countByEventId(eventId);
-                    long completed = stepCompletionRepository.countByUserIdAndStepEventId(userId, eventId);
+                    long completed = stepCompletionRepository.countByUserIdAndStepEventId(requiredUserId, eventId);
                     return total > 0 && completed >= total;
                 })
                 .count();
@@ -56,18 +64,27 @@ public class DashboardService {
                     if (event.getStatus() == EventStatus.ENDED) return false;
                     String eventId = event.getId();
                     long total = stepRepository.countByEventId(eventId);
-                    long completed = stepCompletionRepository.countByUserIdAndStepEventId(userId, eventId);
+                    long completed = stepCompletionRepository.countByUserIdAndStepEventId(requiredUserId, eventId);
                     return total > 0 && completed < total;
                 })
                 .count();
 
+        user.updateStats(
+                nftCount,
+                landmarkCount,
+                cityCount,
+                countryCount,
+                completedCollectionCount
+        );
+
         return DashboardStatsResponse.builder()
-                .nftCount(nftCount)
-                .landmarkCount(landmarkCount)
-                .cityCount(cityCount)
-                .countryCount(countryCount)
-                .completedCollectionCount(completedCollectionCount)
+                .nftCount(user.getNftCount())
+                .landmarkCount(user.getLandmarkCount())
+                .cityCount(user.getCityCount())
+                .countryCount(user.getCountryCount())
+                .completedCollectionCount(user.getCompletedCollectionCount())
                 .activeCollectionsCount(activeCollectionsCount)
+                .totalDistanceLabel("0 km")
                 .build();
     }
 }

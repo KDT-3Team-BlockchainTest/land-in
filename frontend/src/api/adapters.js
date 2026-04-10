@@ -202,13 +202,13 @@ export function adaptDashboard(stats) {
   };
 }
 
-export function adaptProfileSummary(stats) {
+export function adaptProfileSummary(data) {
   return {
-    nftCount: stats.nftCount,
-    cityCount: stats.cityCount,
-    countryCount: stats.countryCount,
-    completedCollectionCount: stats.completedCollectionCount,
-    landmarkCount: stats.landmarkCount,
-    totalDistanceLabel: '— km',
+    nftCount: data.nftCount ?? 0,
+    cityCount: data.cityCount ?? 0,
+    countryCount: data.countryCount ?? 0,
+    completedCollectionCount: data.completedCollectionCount ?? 0,
+    landmarkCount: data.landmarkCount ?? 0,
+    totalDistanceLabel: data.totalDistanceLabel ?? '— km',
   };
 }

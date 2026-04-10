@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { authApi } from "../api/auth";
-import AuthContext from "./auth-context";
+import { AuthContext } from "./auth-context";
 import { resetNfcPromptDismissal } from "../utils/nfcPermission";
 
 function loadInitialUser() {
@@ -9,13 +9,15 @@ function loadInitialUser() {
     const token = localStorage.getItem("land-in-token");
     if (raw && token) return JSON.parse(raw);
   } catch {
-    // ignore
+    // ignore invalid localStorage data
   }
   return null;
 }
 
-function normalizeProfile(data) {
-  return {
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(loadInitialUser);
+
+  const normalizeProfile = useCallback((data) => ({
     id: data.id,
     email: data.email,
     displayName: data.displayName,
@@ -24,11 +26,7 @@ function normalizeProfile(data) {
     walletChainId: data.walletChainId ?? null,
     walletProvider: data.walletProvider ?? null,
     walletConnectedAt: data.walletConnectedAt ?? null,
-  };
-}
-
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(loadInitialUser);
+  }), []);
 
   const login = useCallback(async (email, password) => {
     const data = await authApi.login({ email, password });
@@ -38,7 +36,7 @@ export function AuthProvider({ children }) {
     resetNfcPromptDismissal();
     setUser(profile);
     return profile;
-  }, []);
+  }, [normalizeProfile]);
 
   const signup = useCallback(async (email, password, displayName) => {
     const data = await authApi.signup({ email, password, displayName });
@@ -48,14 +46,14 @@ export function AuthProvider({ children }) {
     resetNfcPromptDismissal();
     setUser(profile);
     return profile;
-  }, []);
+  }, [normalizeProfile]);
 
   const updateUserProfile = useCallback((profile) => {
     const nextUser = normalizeProfile(profile);
     localStorage.setItem("land-in-user", JSON.stringify(nextUser));
     setUser(nextUser);
     return nextUser;
-  }, []);
+  }, [normalizeProfile]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("land-in-token");
