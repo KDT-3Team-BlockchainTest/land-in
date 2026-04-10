@@ -2,8 +2,54 @@ import { useCallback, useState } from "react";
 import { authApi } from "../api/auth";
 import { AuthContext } from "./auth-context";
 import { resetNfcPromptDismissal } from "../utils/nfcPermission";
+import {
+  META_MASK_AUTH_TOKEN_QUERY,
+  META_MASK_AUTH_USER_QUERY,
+} from "../utils/wallet";
+
+function restoreTransferredMobileSession() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get(META_MASK_AUTH_TOKEN_QUERY);
+  const rawUser = params.get(META_MASK_AUTH_USER_QUERY);
+
+  if (!token || !rawUser) {
+    return null;
+  }
+
+  try {
+    const parsedUser = JSON.parse(decodeURIComponent(rawUser));
+    localStorage.setItem("land-in-token", token);
+    localStorage.setItem("land-in-user", JSON.stringify(parsedUser));
+
+    params.delete(META_MASK_AUTH_TOKEN_QUERY);
+    params.delete(META_MASK_AUTH_USER_QUERY);
+
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", nextUrl);
+
+    return parsedUser;
+  } catch {
+    params.delete(META_MASK_AUTH_TOKEN_QUERY);
+    params.delete(META_MASK_AUTH_USER_QUERY);
+
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", nextUrl);
+    return null;
+  }
+}
 
 function loadInitialUser() {
+  const transferredUser = restoreTransferredMobileSession();
+  if (transferredUser) {
+    return transferredUser;
+  }
+
   try {
     const raw = localStorage.getItem("land-in-user");
     const token = localStorage.getItem("land-in-token");

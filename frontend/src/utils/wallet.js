@@ -4,6 +4,8 @@ export const HOODI_CHAIN_ID = 560048;
 export const HOODI_CHAIN_ID_HEX = `0x${HOODI_CHAIN_ID.toString(16)}`;
 const ETHEREUM_MAINNET_CHAIN_ID_HEX = "0x1";
 export const META_MASK_MOBILE_CONNECT_QUERY = "mm_connect";
+export const META_MASK_AUTH_TOKEN_QUERY = "mm_token";
+export const META_MASK_AUTH_USER_QUERY = "mm_user";
 
 const HOODI_CHAIN_CONFIG = {
   chainId: HOODI_CHAIN_ID_HEX,
@@ -38,6 +40,22 @@ export function buildMetaMaskMobileUrl(targetUrl = window.location.href) {
   return `https://metamask.app.link/dapp/${normalizedUrl}`;
 }
 
+function getPersistedAuthToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem("land-in-token");
+}
+
+function getPersistedAuthUser() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem("land-in-user");
+}
+
 export function openMetaMaskMobileBrowser() {
   if (typeof window === "undefined") {
     return;
@@ -45,6 +63,18 @@ export function openMetaMaskMobileBrowser() {
 
   const nextUrl = new URL(window.location.href);
   nextUrl.searchParams.set(META_MASK_MOBILE_CONNECT_QUERY, "1");
+
+  const token = getPersistedAuthToken();
+  const user = getPersistedAuthUser();
+
+  if (token) {
+    nextUrl.searchParams.set(META_MASK_AUTH_TOKEN_QUERY, token);
+  }
+
+  if (user) {
+    nextUrl.searchParams.set(META_MASK_AUTH_USER_QUERY, encodeURIComponent(user));
+  }
+
   window.location.assign(buildMetaMaskMobileUrl(nextUrl.toString()));
 }
 
