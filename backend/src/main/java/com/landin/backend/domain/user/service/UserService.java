@@ -2,6 +2,7 @@ package com.landin.backend.domain.user.service;
 
 import com.landin.backend.common.exception.BusinessException;
 import com.landin.backend.common.exception.ErrorCode;
+import com.landin.backend.domain.nft.service.OnChainNftMintService;
 import com.landin.backend.domain.user.dto.AuthResponse;
 import com.landin.backend.domain.user.dto.LoginRequest;
 import com.landin.backend.domain.user.dto.SignupRequest;
@@ -27,6 +28,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final OnChainNftMintService onChainNftMintService;
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
@@ -34,12 +36,15 @@ public class UserService {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
-        User user = Objects.requireNonNull(User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .displayName(request.getDisplayName())
-                .avatarUrl(request.getAvatarUrl())
-                .build(), "User must not be null");
+        User user = Objects.requireNonNull(
+                User.builder()
+                        .email(request.getEmail())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .displayName(request.getDisplayName())
+                        .avatarUrl(request.getAvatarUrl())
+                        .build(),
+                "User must not be null"
+        );
 
         user = Objects.requireNonNull(userRepository.save(user), "Saved user must not be null");
 
@@ -100,6 +105,7 @@ public class UserService {
                 request.getWalletProvider() == null ? "injected" : request.getWalletProvider().trim()
         );
 
+        onChainNftMintService.retryMintsForUser(user);
         return UserProfileResponse.from(user);
     }
 
