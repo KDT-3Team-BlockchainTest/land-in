@@ -6,6 +6,9 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 jwt:
-  secret: ${JWT_SECRET:landin-local-dev-secret-key-must-be-at-least-32-characters}
+  secret: ${JWT_SECRET:33686dc8-4e53-4fc5-bd61-f5569551ea94}
   expiration: ${JWT_EXPIRATION:86400000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}

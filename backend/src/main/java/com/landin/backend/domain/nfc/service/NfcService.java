@@ -12,6 +12,7 @@ import com.landin.backend.domain.nfc.repository.NfcScanLogRepository;
 import com.landin.backend.domain.nft.dto.UserNftResponse;
 import com.landin.backend.domain.nft.entity.UserNft;
 import com.landin.backend.domain.nft.repository.UserNftRepository;
+import com.landin.backend.domain.nft.service.OnChainNftMintService;
 import com.landin.backend.domain.participation.repository.EventParticipationRepository;
 import com.landin.backend.domain.reward.dto.UserRewardResponse;
 import com.landin.backend.domain.reward.entity.RewardStatus;
@@ -56,6 +57,7 @@ public class NfcService {
     private final UserRewardRepository userRewardRepository;
     private final NfcScanLogRepository nfcScanLogRepository;
     private final UserRepository userRepository;
+    private final OnChainNftMintService onChainNftMintService;
 
     @Transactional
     public NfcVerifyResponse verify(UUID userId, NfcVerifyRequest request) {
@@ -99,10 +101,10 @@ public class NfcService {
 
         if (step.getOrderIndex() > 1) {
             List<Step> stepsInOrder = stepRepository.findByEventIdOrderByOrderIndex(event.getId());
-            Optional<Step> prevStep = stepsInOrder.stream()
+            Optional<Step> previousStep = stepsInOrder.stream()
                     .filter(candidate -> candidate.getOrderIndex() == step.getOrderIndex() - 1)
                     .findFirst();
-            if (prevStep.isPresent() && !stepCompletionRepository.existsByUserIdAndStepId(userId, prevStep.get().getId())) {
+            if (previousStep.isPresent() && !stepCompletionRepository.existsByUserIdAndStepId(userId, previousStep.get().getId())) {
                 saveLog(user, tagUid, NfcScanResult.WRONG_ORDER);
                 throw new BusinessException(ErrorCode.WRONG_ORDER);
             }
@@ -116,13 +118,10 @@ public class NfcService {
                         .build(),
                 "Step completion must not be null"
         );
-        Objects.requireNonNull(
-                stepCompletionRepository.save(completion),
-                "Saved step completion must not be null"
-        );
+        Objects.requireNonNull(stepCompletionRepository.save(completion), "Saved step completion must not be null");
 
         NftTemplate template = nftTemplateRepository.findByStepId(step.getId())
-                .orElseThrow(() -> new RuntimeException("NFT template is missing. stepId=" + step.getId()));
+                .orElseThrow(() -> new IllegalStateException("NFT template is missing. stepId=" + step.getId()));
 
         UserNft userNft = Objects.requireNonNull(
                 UserNft.builder()
@@ -138,9 +137,9 @@ public class NfcService {
                 "User NFT must not be null"
         );
         userNft = Objects.requireNonNull(userNftRepository.save(userNft), "Saved user NFT must not be null");
+        onChainNftMintService.syncMintState(userNft);
 
         saveLog(user, tagUid, NfcScanResult.SUCCESS);
-
         UserReward issuedReward = checkAndIssueReward(userId, user, event);
 
         return NfcVerifyResponse.builder()
@@ -188,7 +187,7 @@ public class NfcService {
     }
 
     private void saveLog(User user, String tagUid, NfcScanResult result) {
-        NfcScanLog log = Objects.requireNonNull(
+        NfcScanLog scanLog = Objects.requireNonNull(
                 NfcScanLog.builder()
                         .user(user)
                         .tagUid(tagUid)
@@ -197,7 +196,7 @@ public class NfcService {
                         .build(),
                 "Scan log must not be null"
         );
-        Objects.requireNonNull(nfcScanLogRepository.save(log), "Saved scan log must not be null");
+        Objects.requireNonNull(nfcScanLogRepository.save(scanLog), "Saved scan log must not be null");
     }
 
     private String generateCouponCode() {
@@ -220,7 +219,7 @@ public class NfcService {
                 return queryTagUid.trim().toUpperCase();
             }
         } catch (IllegalArgumentException ignored) {
-            // not a valid URI, fall back to raw tag value
+            // Not a valid URI. Fall back to the raw tag value.
         }
 
         return trimmed.toUpperCase();

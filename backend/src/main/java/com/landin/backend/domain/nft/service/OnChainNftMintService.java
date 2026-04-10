@@ -1,0 +1,242 @@
+package com.landin.backend.domain.nft.service;
+
+import com.landin.backend.config.BlockchainProperties;
+import com.landin.backend.domain.nft.entity.NftMintStatus;
+import com.landin.backend.domain.nft.entity.UserNft;
+import com.landin.backend.domain.nft.repository.UserNftRepository;
+import com.landin.backend.domain.user.entity.User;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.web3j.abi.EventEncoder;
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.Function;
+import org.web3j.abi.datatypes.Utf8String;
+import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.crypto.Credentials;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.EthGasPrice;
+import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
+import org.web3j.protocol.core.methods.response.Log;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.http.HttpService;
+import org.web3j.tx.RawTransactionManager;
+import org.web3j.utils.Numeric;
+
+import java.math.BigInteger;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class OnChainNftMintService {
+
+    private static final Event TRANSFER_EVENT = new Event(
+            "Transfer",
+            List.of(
+                    new TypeReference<Address>(true) {},
+                    new TypeReference<Address>(true) {},
+                    new TypeReference<Uint256>(true) {}
+            )
+    );
+
+    private final BlockchainProperties blockchainProperties;
+    private final UserNftRepository userNftRepository;
+
+    @Value("${app.public-base-url:http://localhost:8080}")
+    private String publicBaseUrl;
+
+    public void syncMintState(UserNft userNft) {
+        String tokenUri = buildMetadataUrl(Objects.requireNonNull(userNft.getId(), "NFT id must not be null"));
+        String contractAddress = normalize(blockchainProperties.getContractAddress());
+        Long chainId = blockchainProperties.getChainId();
+
+        if (!hasWallet(userNft.getUser())) {
+            userNft.markPendingWallet(tokenUri, contractAddress, chainId, "Connect a Hoodi wallet to continue on-chain minting.");
+            return;
+        }
+
+        if (!blockchainProperties.isConfigured()) {
+            userNft.markPendingOnChain(tokenUri, contractAddress, chainId, "On-chain minting is not configured on the server yet.");
+            return;
+        }
+
+        try {
+            MintResult result = mintOnChain(userNft.getUser().getWalletAddress(), tokenUri);
+            userNft.markOnChainMinted(
+                    tokenUri,
+                    result.contractAddress(),
+                    result.chainId(),
+                    result.tokenId(),
+                    result.transactionHash(),
+                    result.mintedAt()
+            );
+        } catch (Exception exception) {
+            String failureReason = abbreviate(exception.getMessage());
+            log.error(
+                    "[OnChainNftMintService] On-chain mint failed. nftId={}, userId={}, walletAddress={}, reason={}",
+                    userNft.getId(),
+                    userNft.getUser().getId(),
+                    userNft.getUser().getWalletAddress(),
+                    failureReason,
+                    exception
+            );
+            userNft.markOnChainFailed(tokenUri, contractAddress, chainId, failureReason);
+        }
+    }
+
+    @Transactional
+    public int retryMintsForUser(User user) {
+        if (!hasWallet(user)) {
+            return 0;
+        }
+
+        List<UserNft> pendingNfts = userNftRepository.findByUserIdAndMintStatusIn(
+                user.getId(),
+                List.of(NftMintStatus.PENDING_WALLET, NftMintStatus.PENDING_ONCHAIN, NftMintStatus.FAILED_ONCHAIN)
+        );
+
+        pendingNfts.forEach(this::syncMintState);
+        return pendingNfts.size();
+    }
+
+    public String buildMetadataUrl(UUID nftId) {
+        return normalizeBaseUrl(publicBaseUrl) + "/api/nfts/" + nftId + "/metadata";
+    }
+
+    private MintResult mintOnChain(String recipientWalletAddress, String tokenUri) throws Exception {
+        Web3j web3j = Web3j.build(new HttpService(blockchainProperties.getRpcUrl()));
+
+        try {
+            Credentials credentials = Credentials.create(blockchainProperties.getMinterPrivateKey());
+            RawTransactionManager transactionManager = new RawTransactionManager(
+                    web3j,
+                    credentials,
+                    blockchainProperties.getChainId()
+            );
+
+            Function mintFunction = new Function(
+                    normalize(blockchainProperties.getMintFunctionName()),
+                    List.of(new Address(recipientWalletAddress), new Utf8String(tokenUri)),
+                    Collections.emptyList()
+            );
+
+            EthSendTransaction transaction = transactionManager.sendTransaction(
+                    resolveGasPrice(web3j),
+                    BigInteger.valueOf(blockchainProperties.getGasLimit()),
+                    normalize(blockchainProperties.getContractAddress()),
+                    FunctionEncoder.encode(mintFunction),
+                    BigInteger.ZERO
+            );
+
+            if (transaction.hasError()) {
+                throw new IllegalStateException(transaction.getError().getMessage());
+            }
+
+            String transactionHash = Objects.requireNonNull(transaction.getTransactionHash(), "Transaction hash must not be null");
+            TransactionReceipt receipt = waitForReceipt(web3j, transactionHash);
+
+            return new MintResult(
+                    normalize(blockchainProperties.getContractAddress()),
+                    blockchainProperties.getChainId(),
+                    extractTokenId(receipt),
+                    transactionHash,
+                    LocalDateTime.now()
+            );
+        } finally {
+            web3j.shutdown();
+        }
+    }
+
+    private BigInteger resolveGasPrice(Web3j web3j) throws Exception {
+        String configuredGasPrice = normalize(blockchainProperties.getGasPriceWei());
+        if (configuredGasPrice != null) {
+            return new BigInteger(configuredGasPrice);
+        }
+
+        EthGasPrice gasPrice = web3j.ethGasPrice().send();
+        return gasPrice.getGasPrice();
+    }
+
+    private TransactionReceipt waitForReceipt(Web3j web3j, String transactionHash) throws Exception {
+        for (int attempt = 0; attempt < blockchainProperties.getReceiptPollAttempts(); attempt++) {
+            EthGetTransactionReceipt response = web3j.ethGetTransactionReceipt(transactionHash).send();
+            Optional<TransactionReceipt> receipt = response.getTransactionReceipt();
+            if (receipt.isPresent()) {
+                return receipt.get();
+            }
+
+            Thread.sleep(blockchainProperties.getReceiptPollIntervalMillis());
+        }
+
+        throw new IllegalStateException("Timed out while waiting for the mint transaction receipt.");
+    }
+
+    private String extractTokenId(TransactionReceipt receipt) {
+        String transferSignature = EventEncoder.encode(TRANSFER_EVENT);
+        for (Log logEntry : receipt.getLogs()) {
+            if (!normalize(blockchainProperties.getContractAddress()).equalsIgnoreCase(logEntry.getAddress())) {
+                continue;
+            }
+
+            List<String> topics = logEntry.getTopics();
+            if (topics.size() < 4 || !transferSignature.equalsIgnoreCase(topics.get(0))) {
+                continue;
+            }
+
+            return Numeric.toBigInt(topics.get(3)).toString();
+        }
+
+        return null;
+    }
+
+    private boolean hasWallet(User user) {
+        return normalize(user.getWalletAddress()) != null;
+    }
+
+    private String normalizeBaseUrl(String value) {
+        String normalized = normalize(value);
+        if (normalized == null) {
+            return "http://localhost:8080";
+        }
+
+        return normalized.replaceAll("/+$", "");
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String abbreviate(String value) {
+        if (value == null || value.isBlank()) {
+            return "Unknown minting error";
+        }
+
+        return value.length() > 500 ? value.substring(0, 500) : value;
+    }
+
+    private record MintResult(
+            String contractAddress,
+            long chainId,
+            String tokenId,
+            String transactionHash,
+            LocalDateTime mintedAt
+    ) {
+    }
+}
