@@ -56,7 +56,7 @@ export default function BottomNav() {
         <button
           type="button"
           className="bottom-nav__map-button"
-          onClick={() => navigate("/my-progress")}
+          onClick={() => navigate("/map")}
           aria-label="내 진행 현황 보기"
         >
           <FiMap size={20} /> {/* 지도 아이콘 변경 */}

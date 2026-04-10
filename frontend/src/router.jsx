@@ -6,6 +6,7 @@ import Join from "./pages/login_all/Join";
 import CollectionPage from "./pages/collection/CollectionPage";
 import EventDetailPage from "./pages/event/EventDetailPage";
 import HomePage from "./pages/home/Home";
+import MapPage from "./pages/map/map";
 import MyPage from "./pages/mypage/MyPage";
 import MyProgressPage from "./pages/myProgress/MyProgressPage";
 import NftGalleryPage from "./pages/nftGallery/NftGalleryPage";
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <HomePage /> },
+      { path: "map", element: <MapPage /> },
       { path: "collection", element: <CollectionPage /> },
       { path: "tag", element: <TagPage /> },
       { path: "reward", element: <RewardsPage /> },
