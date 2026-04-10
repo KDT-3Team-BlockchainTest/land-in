@@ -133,6 +133,13 @@ export default function WalletConnectPage() {
     };
   }, [mobilePending, syncProfileFromServer, user?.walletAddress]);
 
+  // 지갑이 연결되는 순간 (모바일 복귀 시 AuthProvider visibilitychange 포함) 자동 이동
+  useEffect(() => {
+    if (user?.walletAddress) {
+      navigate(nextPath, { replace: true });
+    }
+  }, [user?.walletAddress, navigate, nextPath]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const shouldAutoConnect = params.get(META_MASK_MOBILE_CONNECT_QUERY) === "1";
