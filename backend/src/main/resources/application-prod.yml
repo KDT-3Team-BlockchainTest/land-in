@@ -11,4 +11,9 @@ jwt:
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 app:
-  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+  public-base-url: ${APP_PUBLIC_BASE_URL:https://${RAILWAY_PUBLIC_DOMAIN:localhost}}
+
+blockchain:
+  enabled: ${BLOCKCHAIN_ENABLED:true}
+  contract-address: ${BLOCKCHAIN_CONTRACT_ADDRESS:0xC4c59a6F57382fc58C93c978b4b78Cf571316453}
+  minter-private-key: ${BLOCKCHAIN_MINTER_PRIVATE_KEY:}
