@@ -8,6 +8,7 @@ import PlaceImage from "../../components/common/PlaceImage/PlaceImage";
 
 const VERIFY_DELAY_MS = 2500;
 const VERIFIED_DELAY_MS = 1700;
+const HOODI_EXPLORER_BASE_URL = "https://hoodi.etherscan.io";
 
 function PhoneIcon({ className = "" }) {
   return (
@@ -165,6 +166,43 @@ function formatNfcReadError(error) {
   if (error.name === "AbortError") return "NFC 읽기가 취소되었습니다.";
 
   return error.message || "NFC 태그를 읽지 못했습니다.";
+}
+
+function getMintStatusCopy(mintedNft) {
+  switch (mintedNft?.mintStatus) {
+    case "MINTED_ONCHAIN":
+      return {
+        title: "On-chain mint completed",
+        description: mintedNft.tokenId
+          ? `Token #${mintedNft.tokenId} was minted on Hoodi.`
+          : "The NFT was minted on Hoodi and recorded on-chain.",
+      };
+    case "PENDING_WALLET":
+      return {
+        title: "Wallet connection required",
+        description: "The NFC proof is saved. Connect your wallet to continue the on-chain mint.",
+      };
+    case "PENDING_ONCHAIN":
+      return {
+        title: "On-chain mint pending",
+        description: mintedNft.mintFailureReason || "The NFT was created off-chain and is waiting for the blockchain mint.",
+      };
+    case "FAILED_ONCHAIN":
+      return {
+        title: "On-chain mint needs retry",
+        description: mintedNft.mintFailureReason || "The NFC proof is saved, but the blockchain mint did not finish.",
+      };
+    default:
+      return {
+        title: "Off-chain record saved",
+        description: "The NFT record was created in Land-in, but no on-chain result is available yet.",
+      };
+  }
+}
+
+function getTransactionUrl(transactionHash) {
+  if (!transactionHash) return "";
+  return `${HOODI_EXPLORER_BASE_URL}/tx/${transactionHash}`;
 }
 
 async function readTagValueFromDevice() {
@@ -444,6 +482,18 @@ export default function TagPage() {
                 <p className="tag-page__mint-subtitle">NFT 발행 완료</p>
                 <p className="tag-page__mint-place">{mintedNft.name}</p>
                 <p className="tag-page__mint-location">{mintedNft.rarity}</p>
+                <p className="tag-page__status-description">{getMintStatusCopy(mintedNft).title}</p>
+                <p className="tag-page__status-description">{getMintStatusCopy(mintedNft).description}</p>
+                {mintedNft.transactionHash ? (
+                  <a
+                    className="tag-page__secondary-button"
+                    href={getTransactionUrl(mintedNft.transactionHash)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span>View transaction</span>
+                  </a>
+                ) : null}
               </div>
             </section>
             <div className="tag-page__mint-actions">
