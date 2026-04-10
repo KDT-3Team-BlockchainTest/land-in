@@ -56,11 +56,12 @@ function getPersistedAuthUser() {
   return window.localStorage.getItem("land-in-user");
 }
 
-export function openMetaMaskMobileBrowser() {
+export function openMetaMaskMobileBrowser(options = {}) {
   if (typeof window === "undefined") {
     return;
   }
 
+  const { preserveCurrentTab = true } = options;
   const nextUrl = new URL(window.location.href);
   nextUrl.searchParams.set(META_MASK_MOBILE_CONNECT_QUERY, "1");
 
@@ -75,7 +76,15 @@ export function openMetaMaskMobileBrowser() {
     nextUrl.searchParams.set(META_MASK_AUTH_USER_QUERY, encodeURIComponent(user));
   }
 
-  window.location.assign(buildMetaMaskMobileUrl(nextUrl.toString()));
+  const deeplink = buildMetaMaskMobileUrl(nextUrl.toString());
+  if (preserveCurrentTab) {
+    const openedWindow = window.open(deeplink, "_blank", "noopener,noreferrer");
+    if (openedWindow) {
+      return;
+    }
+  }
+
+  window.location.assign(deeplink);
 }
 
 function resolveInjectedProvider() {
