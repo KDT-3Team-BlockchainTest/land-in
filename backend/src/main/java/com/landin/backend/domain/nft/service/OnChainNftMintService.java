@@ -5,11 +5,15 @@ import com.landin.backend.domain.nft.entity.NftMintStatus;
 import com.landin.backend.domain.nft.entity.UserNft;
 import com.landin.backend.domain.nft.repository.UserNftRepository;
 import com.landin.backend.domain.user.entity.User;
+import com.landin.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeReference;
@@ -29,6 +33,7 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.utils.Numeric;
 
+import java.net.URI;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -53,9 +58,63 @@ public class OnChainNftMintService {
 
     private final BlockchainProperties blockchainProperties;
     private final UserNftRepository userNftRepository;
+    private final UserRepository userRepository;
+    private final PlatformTransactionManager transactionManager;
 
     @Value("${app.public-base-url:http://localhost:8080}")
     private String publicBaseUrl;
+
+    public void prepareMintState(UserNft userNft) {
+        String tokenUri = buildMetadataUrl(Objects.requireNonNull(userNft.getId(), "NFT id must not be null"));
+        String contractAddress = normalize(blockchainProperties.getContractAddress());
+        Long chainId = blockchainProperties.getChainId();
+
+        if (!hasWallet(userNft.getUser())) {
+            userNft.markPendingWallet(tokenUri, contractAddress, chainId, "Connect a Hoodi wallet to continue on-chain minting.");
+            return;
+        }
+
+        String metadataIssue = validateMetadataBaseUrl();
+        if (metadataIssue != null) {
+            userNft.markPendingOnChain(tokenUri, contractAddress, chainId, metadataIssue);
+            return;
+        }
+
+        if (!blockchainProperties.isConfigured()) {
+            userNft.markPendingOnChain(tokenUri, contractAddress, chainId, "On-chain minting is not configured on the server yet.");
+            return;
+        }
+
+        userNft.markPendingOnChain(tokenUri, contractAddress, chainId, "Mint queued and will run after the NFC transaction commits.");
+    }
+
+    public void scheduleMintAfterCommit(UUID userNftId) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            syncMintStateById(userNftId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                syncMintStateById(userNftId);
+            }
+        });
+    }
+
+    public void scheduleRetryAfterCommit(UUID userId) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            retryMintsForUser(userId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                retryMintsForUser(userId);
+            }
+        });
+    }
 
     public void syncMintState(UserNft userNft) {
         String tokenUri = buildMetadataUrl(Objects.requireNonNull(userNft.getId(), "NFT id must not be null"));
@@ -64,6 +123,12 @@ public class OnChainNftMintService {
 
         if (!hasWallet(userNft.getUser())) {
             userNft.markPendingWallet(tokenUri, contractAddress, chainId, "Connect a Hoodi wallet to continue on-chain minting.");
+            return;
+        }
+
+        String metadataIssue = validateMetadataBaseUrl();
+        if (metadataIssue != null) {
+            userNft.markPendingOnChain(tokenUri, contractAddress, chainId, metadataIssue);
             return;
         }
 
@@ -82,6 +147,13 @@ public class OnChainNftMintService {
                     result.transactionHash(),
                     result.mintedAt()
             );
+            log.info(
+                    "[OnChainNftMintService] On-chain mint succeeded. nftId={}, userId={}, tokenId={}, txHash={}",
+                    userNft.getId(),
+                    userNft.getUser().getId(),
+                    result.tokenId(),
+                    result.transactionHash()
+            );
         } catch (Exception exception) {
             String failureReason = abbreviate(exception.getMessage());
             log.error(
@@ -96,19 +168,32 @@ public class OnChainNftMintService {
         }
     }
 
-    @Transactional
-    public int retryMintsForUser(User user) {
-        if (!hasWallet(user)) {
-            return 0;
-        }
+    public int retryMintsForUser(UUID userId) {
+        Integer retriedCount = newTransactionTemplate().execute(status -> {
+            User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null")).orElse(null);
+            if (user == null || !hasWallet(user)) {
+                return 0;
+            }
 
-        List<UserNft> pendingNfts = userNftRepository.findByUserIdAndMintStatusIn(
-                user.getId(),
-                List.of(NftMintStatus.PENDING_WALLET, NftMintStatus.PENDING_ONCHAIN, NftMintStatus.FAILED_ONCHAIN)
-        );
+            List<UserNft> pendingNfts = userNftRepository.findByUserIdAndMintStatusIn(
+                    userId,
+                    List.of(NftMintStatus.PENDING_WALLET, NftMintStatus.PENDING_ONCHAIN, NftMintStatus.FAILED_ONCHAIN)
+            );
 
-        pendingNfts.forEach(this::syncMintState);
-        return pendingNfts.size();
+            pendingNfts.forEach(this::syncMintState);
+            return pendingNfts.size();
+        });
+
+        return retriedCount == null ? 0 : retriedCount;
+    }
+
+    public void syncMintStateById(UUID userNftId) {
+        newTransactionTemplate().executeWithoutResult(status -> userNftRepository.findDetailedById(
+                Objects.requireNonNull(userNftId, "NFT id must not be null")
+        ).ifPresentOrElse(
+                this::syncMintState,
+                () -> log.warn("[OnChainNftMintService] NFT not found for deferred mint. nftId={}", userNftId)
+        ));
     }
 
     public String buildMetadataUrl(UUID nftId) {
@@ -203,6 +288,62 @@ public class OnChainNftMintService {
 
     private boolean hasWallet(User user) {
         return normalize(user.getWalletAddress()) != null;
+    }
+
+    private String validateMetadataBaseUrl() {
+        String normalized = normalize(publicBaseUrl);
+        if (normalized == null) {
+            return "Set APP_PUBLIC_BASE_URL to a public URL before on-chain minting.";
+        }
+
+        try {
+            URI uri = URI.create(normalized);
+            String scheme = normalize(uri.getScheme());
+            String host = normalize(uri.getHost());
+
+            if (host == null || scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+                return "APP_PUBLIC_BASE_URL must be a valid http(s) URL.";
+            }
+
+            if (isPrivateHost(host)) {
+                return "APP_PUBLIC_BASE_URL must be publicly reachable so token metadata can be resolved.";
+            }
+        } catch (IllegalArgumentException exception) {
+            return "APP_PUBLIC_BASE_URL must be a valid http(s) URL.";
+        }
+
+        return null;
+    }
+
+    private boolean isPrivateHost(String host) {
+        String lowered = host.toLowerCase();
+        if (lowered.equals("localhost") || lowered.equals("0.0.0.0") || lowered.endsWith(".local")) {
+            return true;
+        }
+
+        if (lowered.startsWith("127.") || lowered.startsWith("10.") || lowered.startsWith("192.168.")) {
+            return true;
+        }
+
+        if (!lowered.startsWith("172.")) {
+            return false;
+        }
+
+        String[] parts = lowered.split("\\.");
+        if (parts.length < 2) {
+            return false;
+        }
+
+        try {
+            int secondOctet = Integer.parseInt(parts[1]);
+            return secondOctet >= 16 && secondOctet <= 31;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
+    }
+
+    private TransactionTemplate newTransactionTemplate() {
+        return new TransactionTemplate(transactionManager);
     }
 
     private String normalizeBaseUrl(String value) {
