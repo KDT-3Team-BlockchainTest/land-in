@@ -20,14 +20,15 @@ function buildUnexpectedResponseMessage(res, responseText) {
   return `The API returned an unexpected response: ${trimmedText.slice(0, 160)}`;
 }
 
-async function request(method, path, body) {
+async function request(method, path, body, options = {}) {
   const headers = { Accept: "application/json" };
+  const { auth = true } = options;
 
   if (body != null) {
     headers["Content-Type"] = "application/json";
   }
 
-  const token = getToken();
+  const token = auth ? getToken() : null;
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -68,8 +69,8 @@ async function request(method, path, body) {
 }
 
 export const api = {
-  get: (path) => request("GET", path),
-  post: (path, body) => request("POST", path, body),
-  patch: (path, body) => request("PATCH", path, body),
-  delete: (path) => request("DELETE", path),
+  get: (path, options) => request("GET", path, undefined, options),
+  post: (path, body, options) => request("POST", path, body, options),
+  patch: (path, body, options) => request("PATCH", path, body, options),
+  delete: (path, options) => request("DELETE", path, undefined, options),
 };
