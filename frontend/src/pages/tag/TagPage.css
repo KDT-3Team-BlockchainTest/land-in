@@ -108,6 +108,18 @@
   margin-top: 22px;
 }
 
+.tag-page__platform-note {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.tag-page__platform-note .tag-page__status-description + .tag-page__status-description {
+  margin-top: 8px;
+}
+
 .tag-page__guide-title {
   margin: 0 0 18px;
   color: var(--color-gray-900);

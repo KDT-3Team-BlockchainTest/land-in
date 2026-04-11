@@ -1,14 +1,18 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/useAuth";
+import { NEXT_PATH_QUERY, readNextPath } from "../../utils/navigation";
 import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "", remember: false });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const nextPath = useMemo(() => readNextPath(searchParams), [searchParams]);
+  const nextQuery = useMemo(() => `?${NEXT_PATH_QUERY}=${encodeURIComponent(nextPath)}`, [nextPath]);
 
   const handleChange = (event) => {
     const { name, type, checked, value } = event.target;
@@ -27,9 +31,8 @@ export default function Login() {
 
     try {
       const profile = await login(normalizedEmail, form.password);
-      navigate(profile.walletAddress ? "/" : "/wallet/connect", {
+      navigate(profile.walletAddress ? nextPath : `/wallet/connect${nextQuery}`, {
         replace: true,
-        state: { nextPath: "/" },
       });
     } catch (err) {
       setError(err.message || "Failed to sign in.");
@@ -124,7 +127,7 @@ export default function Login() {
 
         <div className="auth-footer">
           New here?
-          <Link to="/join" className="link-text">
+          <Link to={`/join${nextQuery}`} className="link-text">
             Create account
           </Link>
         </div>
