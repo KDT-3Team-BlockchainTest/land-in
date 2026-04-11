@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -33,6 +36,7 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.utils.Numeric;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -197,7 +201,7 @@ public class OnChainNftMintService {
     }
 
     public String buildMetadataUrl(UUID nftId) {
-        return normalizeBaseUrl(publicBaseUrl) + "/api/nfts/" + nftId + "/metadata";
+        return resolveMetadataBaseUrl() + "/api/nfts/" + nftId + "/metadata";
     }
 
     private MintResult mintOnChain(String recipientWalletAddress, String tokenUri) throws Exception {
@@ -291,7 +295,7 @@ public class OnChainNftMintService {
     }
 
     private String validateMetadataBaseUrl() {
-        String normalized = normalize(publicBaseUrl);
+        String normalized = normalize(resolveMetadataBaseUrl());
         if (normalized == null) {
             return "Set APP_PUBLIC_BASE_URL to a public URL before on-chain minting.";
         }
@@ -313,6 +317,53 @@ public class OnChainNftMintService {
         }
 
         return null;
+    }
+
+    private String resolveMetadataBaseUrl() {
+        String requestBaseUrl = resolveBaseUrlFromCurrentRequest();
+        if (requestBaseUrl != null) {
+            return requestBaseUrl;
+        }
+
+        return normalizeBaseUrl(publicBaseUrl);
+    }
+
+    private String resolveBaseUrlFromCurrentRequest() {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (!(requestAttributes instanceof ServletRequestAttributes servletRequestAttributes)) {
+            return null;
+        }
+
+        HttpServletRequest request = servletRequestAttributes.getRequest();
+        String host = firstHeaderValue(request.getHeader("X-Forwarded-Host"));
+        String scheme = firstHeaderValue(request.getHeader("X-Forwarded-Proto"));
+
+        if (host != null) {
+            String resolvedScheme = scheme != null ? scheme : "https";
+            return normalizeBaseUrl(resolvedScheme + "://" + host);
+        }
+
+        String requestHost = normalize(request.getServerName());
+        String requestScheme = scheme != null ? scheme : normalize(request.getScheme());
+        if (requestHost == null || requestScheme == null) {
+            return null;
+        }
+
+        int port = request.getServerPort();
+        boolean defaultPort = ("http".equalsIgnoreCase(requestScheme) && port == 80)
+                || ("https".equalsIgnoreCase(requestScheme) && port == 443);
+        String portSuffix = (port > 0 && !defaultPort) ? ":" + port : "";
+        return normalizeBaseUrl(requestScheme + "://" + requestHost + portSuffix);
+    }
+
+    private String firstHeaderValue(String headerValue) {
+        String normalized = normalize(headerValue);
+        if (normalized == null) {
+            return null;
+        }
+
+        int separatorIndex = normalized.indexOf(",");
+        return separatorIndex >= 0 ? normalized.substring(0, separatorIndex).trim() : normalized;
     }
 
     private boolean isPrivateHost(String host) {
