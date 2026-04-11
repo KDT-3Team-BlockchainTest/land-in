@@ -109,6 +109,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (user) {
+      return;
+    }
+
+    const persistedUser = loadInitialUser();
+    if (persistedUser) {
+      setUser(persistedUser);
+    }
+  }, [user]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function syncUserFromServer() {

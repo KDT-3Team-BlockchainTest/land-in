@@ -23,8 +23,10 @@ export default function Login() {
     setError("");
     setLoading(true);
 
+    const normalizedEmail = form.email.trim().toLowerCase();
+
     try {
-      const profile = await login(form.email, form.password);
+      const profile = await login(normalizedEmail, form.password);
       navigate(profile.walletAddress ? "/" : "/wallet/connect", {
         replace: true,
         state: { nextPath: "/" },
@@ -56,6 +58,10 @@ export default function Login() {
                 onChange={handleChange}
                 placeholder="your@email.com"
                 autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="email"
                 required
               />
             </div>
@@ -72,6 +78,9 @@ export default function Login() {
                 onChange={handleChange}
                 placeholder="Enter your password"
                 autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 required
               />
             </div>
