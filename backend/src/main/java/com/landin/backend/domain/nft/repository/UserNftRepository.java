@@ -20,6 +20,7 @@ public interface UserNftRepository extends JpaRepository<UserNft, UUID> {
     @EntityGraph(attributePaths = {"user", "event", "step", "nftTemplate"})
     Optional<UserNft> findDetailedById(UUID id);
 
+    @EntityGraph(attributePaths = {"user"})
     List<UserNft> findByUserIdAndMintStatusIn(UUID userId, Collection<NftMintStatus> statuses);
 
     long countByUserId(UUID userId);
