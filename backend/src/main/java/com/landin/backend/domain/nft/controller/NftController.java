@@ -41,6 +41,20 @@ public class NftController {
         return ApiResponse.ok(nfts.stream().map(UserNftResponse::from).toList());
     }
 
+    @GetMapping("/{nftId}")
+    public ApiResponse<UserNftResponse> getNft(
+            @PathVariable UUID nftId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID userId = UUID.fromString(userDetails.getUsername());
+
+        UserNft nft = userNftRepository.findDetailedById(nftId)
+                .filter(candidate -> candidate.getUser() != null && userId.equals(candidate.getUser().getId()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.NFT_NOT_FOUND));
+
+        return ApiResponse.ok(UserNftResponse.from(nft));
+    }
+
     @GetMapping("/{nftId}/metadata")
     public Map<String, Object> getMetadata(@PathVariable UUID nftId) {
         UserNft nft = userNftRepository.findDetailedById(nftId)

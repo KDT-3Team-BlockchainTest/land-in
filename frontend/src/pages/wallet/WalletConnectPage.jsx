@@ -1,9 +1,10 @@
 import "./WalletConnectPage.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { authApi } from "../../api/auth";
 import { walletApi } from "../../api/wallet";
 import { useAuth } from "../../contexts/useAuth";
+import { readNextPath } from "../../utils/navigation";
 import {
   connectMetaMaskWallet,
   formatWalletAddress,
@@ -46,13 +47,14 @@ function formatWalletError(error) {
 export default function WalletConnectPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, updateUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [mobilePending, setMobilePending] = useState(false);
   const [error, setError] = useState("");
   const autoConnectAttemptedRef = useRef(false);
 
-  const nextPath = location.state?.nextPath ?? "/";
+  const nextPath = location.state?.nextPath ?? readNextPath(searchParams);
 
   const handleSkip = () => {
     navigate(nextPath, { replace: true });
