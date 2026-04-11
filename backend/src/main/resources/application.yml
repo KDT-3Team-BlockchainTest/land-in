@@ -7,7 +7,7 @@ spring:
 
   datasource:
     hikari:
-      connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+      connection-init-sql: "SET NAMES utf8mb4"
 
   jpa:
     open-in-view: false
@@ -16,7 +16,6 @@ spring:
     show-sql: true
     properties:
       "[hibernate.format_sql]": true
-      "[hibernate.connection.charSet]": "utf8mb4"
 
 server:
   port: ${PORT:8080}

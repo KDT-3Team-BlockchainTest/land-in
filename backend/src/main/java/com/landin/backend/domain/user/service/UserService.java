@@ -32,15 +32,18 @@ public class UserService {
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        String normalizedDisplayName = normalizeDisplayName(request.getDisplayName());
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         User user = Objects.requireNonNull(
                 User.builder()
-                        .email(request.getEmail())
+                        .email(normalizedEmail)
                         .password(passwordEncoder.encode(request.getPassword()))
-                        .displayName(request.getDisplayName())
+                        .displayName(normalizedDisplayName)
                         .avatarUrl(request.getAvatarUrl())
                         .build(),
                 "User must not be null"
@@ -63,7 +66,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -116,5 +119,13 @@ public class UserService {
 
         user.clearWalletConnection();
         return UserProfileResponse.from(user);
+    }
+
+    private String normalizeEmail(String email) {
+        return Objects.requireNonNull(email, "Email must not be null").trim().toLowerCase();
+    }
+
+    private String normalizeDisplayName(String displayName) {
+        return Objects.requireNonNull(displayName, "Display name must not be null").trim();
     }
 }
