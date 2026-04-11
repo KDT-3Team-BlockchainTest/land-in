@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/useAuth";
+import { NEXT_PATH_QUERY, readNextPath } from "../../utils/navigation";
 import "./Join.css";
 
 const initialTerms = {
@@ -11,6 +12,7 @@ const initialTerms = {
 
 export default function Join() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signup } = useAuth();
   const [form, setForm] = useState({
     displayName: "",
@@ -21,6 +23,8 @@ export default function Join() {
   const [terms, setTerms] = useState(initialTerms);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const nextPath = useMemo(() => readNextPath(searchParams), [searchParams]);
+  const nextQuery = useMemo(() => `?${NEXT_PATH_QUERY}=${encodeURIComponent(nextPath)}`, [nextPath]);
 
   const allChecked = Object.values(terms).every(Boolean);
 
@@ -73,9 +77,8 @@ export default function Join() {
 
     try {
       const profile = await signup(normalizedEmail, form.password, normalizedDisplayName);
-      navigate(profile.walletAddress ? "/" : "/wallet/connect", {
+      navigate(profile.walletAddress ? nextPath : `/wallet/connect${nextQuery}`, {
         replace: true,
-        state: { nextPath: "/" },
       });
     } catch (err) {
       setError(err.message || "Failed to create account.");
@@ -227,7 +230,7 @@ export default function Join() {
 
         <div className="auth-footer">
           Already have an account?
-          <Link to="/login" className="link-text">
+          <Link to={`/login${nextQuery}`} className="link-text">
             Log In
           </Link>
         </div>

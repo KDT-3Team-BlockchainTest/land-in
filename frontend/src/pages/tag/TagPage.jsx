@@ -4,10 +4,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { adaptCollection } from "../../api/adapters";
 import { collectionsApi } from "../../api/collections";
 import { nfcApi } from "../../api/nfc";
+import { nftsApi } from "../../api/nfts";
 import PlaceImage from "../../components/common/PlaceImage/PlaceImage";
 
 const VERIFY_DELAY_MS = 2500;
 const VERIFIED_DELAY_MS = 1700;
+const MINT_POLL_INTERVAL_MS = 3000;
+const MINT_POLL_TIMEOUT_MS = 45000;
 const HOODI_EXPLORER_BASE_URL = "https://hoodi.etherscan.io";
 
 function PhoneIcon({ className = "" }) {
@@ -157,6 +160,11 @@ function isWebNfcSupported() {
   return typeof window !== "undefined" && "NDEFReader" in window;
 }
 
+function isIosDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 function formatNfcReadError(error) {
   if (!error) return "NFC 태그를 읽지 못했습니다.";
 
@@ -203,6 +211,10 @@ function getMintStatusCopy(mintedNft) {
 function getTransactionUrl(transactionHash) {
   if (!transactionHash) return "";
   return `${HOODI_EXPLORER_BASE_URL}/tx/${transactionHash}`;
+}
+
+function shouldPollMintStatus(mintedNft) {
+  return mintedNft?.id && mintedNft.mintStatus === "PENDING_ONCHAIN";
 }
 
 async function readTagValueFromDevice() {
@@ -319,8 +331,42 @@ export default function TagPage() {
     return () => clearTimeout(timer);
   }, [phase, tagUid]);
 
+  useEffect(() => {
+    if (!shouldPollMintStatus(mintedNft)) return undefined;
+
+    let cancelled = false;
+    const startedAt = Date.now();
+
+    const poll = async () => {
+      try {
+        const refreshed = await nftsApi.getById(mintedNft.id);
+        if (cancelled || !refreshed) return;
+
+        setMintedNft(refreshed);
+        if (refreshed.mintStatus !== "PENDING_ONCHAIN") {
+          return;
+        }
+
+        if (Date.now() - startedAt < MINT_POLL_TIMEOUT_MS) {
+          setTimeout(poll, MINT_POLL_INTERVAL_MS);
+        }
+      } catch {
+        if (!cancelled && Date.now() - startedAt < MINT_POLL_TIMEOUT_MS) {
+          setTimeout(poll, MINT_POLL_INTERVAL_MS);
+        }
+      }
+    };
+
+    const timer = setTimeout(poll, MINT_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [mintedNft]);
+
   const activeCollection = collections[0] ?? null;
   const canUseWebNfc = isWebNfcSupported();
+  const isIos = isIosDevice();
 
   const resetToReady = () => {
     setPhase("ready");
@@ -416,6 +462,16 @@ export default function TagPage() {
                 <p className="tag-page__status-description">
                   이 브라우저에서는 직접 읽기를 지원하지 않아 테스트용 값 입력 방식만 사용할 수 있습니다.
                 </p>
+              )}
+              {!canUseWebNfc && isIos && (
+                <div className="tag-page__platform-note">
+                  <p className="tag-page__status-description">
+                    iPhone Safari does not expose Web NFC to websites, so the in-page read button cannot be shown.
+                  </p>
+                  <p className="tag-page__status-description">
+                    To support iPhone, the NFC tag itself needs to open a Land-in URL like `/tag?tagUid=...` when tapped.
+                  </p>
+                </div>
               )}
             </section>
             <VerificationGuide />
