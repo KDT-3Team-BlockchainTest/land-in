@@ -10,10 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -40,6 +38,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -94,114 +93,187 @@ public class OnChainNftMintService {
 
     public void scheduleMintAfterCommit(UUID userNftId) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
-            syncMintStateById(userNftId);
+            runDeferredMint(userNftId);
             return;
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                syncMintStateById(userNftId);
+                runDeferredMint(userNftId);
             }
         });
     }
 
     public void scheduleRetryAfterCommit(UUID userId) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
-            retryMintsForUser(userId);
+            runDeferredRetry(userId);
             return;
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                retryMintsForUser(userId);
+                runDeferredRetry(userId);
             }
         });
     }
 
-    public void syncMintState(UserNft userNft) {
-        String tokenUri = buildMetadataUrl(Objects.requireNonNull(userNft.getId(), "NFT id must not be null"));
-        String contractAddress = normalize(blockchainProperties.getContractAddress());
-        Long chainId = blockchainProperties.getChainId();
+    /**
+     * Loads the UserNft, performs the on-chain mint (without holding a DB connection),
+     * and persists the result in a separate transaction.
+     */
+    public void mintById(UUID userNftId) {
+        Objects.requireNonNull(userNftId, "NFT id must not be null");
 
-        if (!hasWallet(userNft.getUser())) {
-            userNft.markPendingWallet(tokenUri, contractAddress, chainId, "Connect a Hoodi wallet to continue on-chain minting.");
+        // Step 1: fetch mint prerequisites in a short transaction (no blockchain I/O)
+        MintPrereqs prereqs = newReadOnlyTransactionTemplate().execute(status ->
+                userNftRepository.findDetailedById(userNftId)
+                        .map(this::buildPrereqs)
+                        .orElse(null)
+        );
+
+        if (prereqs == null) {
+            log.warn("[OnChainNftMintService] NFT not found for deferred mint. nftId={}", userNftId);
             return;
         }
 
-        String metadataIssue = validateMetadataBaseUrl();
-        if (metadataIssue != null) {
-            userNft.markPendingOnChain(tokenUri, contractAddress, chainId, metadataIssue);
-            return;
-        }
+        // Step 2: execute blockchain I/O with no DB connection held
+        MintOutcome outcome = executeOutcome(prereqs);
 
-        if (!blockchainProperties.isConfigured()) {
-            userNft.markPendingOnChain(tokenUri, contractAddress, chainId, "On-chain minting is not configured on the server yet.");
-            return;
-        }
-
-        try {
-            MintResult result = mintOnChain(userNft.getUser().getWalletAddress(), tokenUri);
-            userNft.markOnChainMinted(
-                    tokenUri,
-                    result.contractAddress(),
-                    result.chainId(),
-                    result.tokenId(),
-                    result.transactionHash(),
-                    result.mintedAt()
-            );
-            log.info(
-                    "[OnChainNftMintService] On-chain mint succeeded. nftId={}, userId={}, tokenId={}, txHash={}",
-                    userNft.getId(),
-                    userNft.getUser().getId(),
-                    result.tokenId(),
-                    result.transactionHash()
-            );
-        } catch (Exception exception) {
-            String failureReason = abbreviate(exception.getMessage());
-            log.error(
-                    "[OnChainNftMintService] On-chain mint failed. nftId={}, userId={}, walletAddress={}, reason={}",
-                    userNft.getId(),
-                    userNft.getUser().getId(),
-                    userNft.getUser().getWalletAddress(),
-                    failureReason,
-                    exception
-            );
-            userNft.markOnChainFailed(tokenUri, contractAddress, chainId, failureReason);
-        }
+        // Step 3: persist the result in a new short transaction
+        persistOutcome(userNftId, prereqs, outcome);
     }
 
     public int retryMintsForUser(UUID userId) {
-        Integer retriedCount = newTransactionTemplate().execute(status -> {
-            User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null")).orElse(null);
+        Objects.requireNonNull(userId, "User id must not be null");
+
+        // Step 1: fetch all pending NFT parameters in one short transaction
+        List<MintPrereqs> pending = newReadOnlyTransactionTemplate().execute(status -> {
+            User user = userRepository.findById(userId).orElse(null);
             if (user == null || !hasWallet(user)) {
-                return 0;
+                return Collections.<MintPrereqs>emptyList();
             }
 
-            List<UserNft> pendingNfts = userNftRepository.findByUserIdAndMintStatusIn(
+            List<UserNft> nfts = userNftRepository.findByUserIdAndMintStatusIn(
                     userId,
                     List.of(NftMintStatus.PENDING_WALLET, NftMintStatus.PENDING_ONCHAIN, NftMintStatus.FAILED_ONCHAIN)
             );
 
-            pendingNfts.forEach(this::syncMintState);
-            return pendingNfts.size();
+            List<MintPrereqs> result = new ArrayList<>(nfts.size());
+            for (UserNft nft : nfts) {
+                result.add(buildPrereqs(nft));
+            }
+            return result;
         });
 
-        return retriedCount == null ? 0 : retriedCount;
+        if (pending == null || pending.isEmpty()) {
+            return 0;
+        }
+
+        // Step 2 & 3: mint each NFT without holding a DB connection, then persist
+        for (MintPrereqs prereqs : pending) {
+            MintOutcome outcome = executeOutcome(prereqs);
+            persistOutcome(prereqs.userNftId(), prereqs, outcome);
+        }
+
+        return pending.size();
     }
 
+    /**
+     * @deprecated Use {@link #mintById(UUID)} instead. Kept for compatibility.
+     */
+    @Deprecated
     public void syncMintStateById(UUID userNftId) {
-        newTransactionTemplate().executeWithoutResult(status -> userNftRepository.findDetailedById(
-                Objects.requireNonNull(userNftId, "NFT id must not be null")
-        ).ifPresentOrElse(
-                this::syncMintState,
-                () -> log.warn("[OnChainNftMintService] NFT not found for deferred mint. nftId={}", userNftId)
-        ));
+        mintById(userNftId);
     }
 
     public String buildMetadataUrl(UUID nftId) {
         return resolveMetadataBaseUrl() + "/api/nfts/" + nftId + "/metadata";
+    }
+
+    // ─── private helpers ────────────────────────────────────────────────────────
+
+    private MintPrereqs buildPrereqs(UserNft userNft) {
+        String tokenUri = buildMetadataUrl(Objects.requireNonNull(userNft.getId(), "NFT id must not be null"));
+        String contractAddress = normalize(blockchainProperties.getContractAddress());
+        Long chainId = blockchainProperties.getChainId();
+        String walletAddress = userNft.getUser() != null ? normalize(userNft.getUser().getWalletAddress()) : null;
+
+        if (walletAddress == null) {
+            return MintPrereqs.blocked(userNft.getId(), tokenUri, contractAddress, chainId,
+                    NftMintStatus.PENDING_WALLET, "Connect a Hoodi wallet to continue on-chain minting.");
+        }
+
+        String metadataIssue = validateMetadataBaseUrl();
+        if (metadataIssue != null) {
+            return MintPrereqs.blocked(userNft.getId(), tokenUri, contractAddress, chainId,
+                    NftMintStatus.PENDING_ONCHAIN, metadataIssue);
+        }
+
+        if (!blockchainProperties.isConfigured()) {
+            return MintPrereqs.blocked(userNft.getId(), tokenUri, contractAddress, chainId,
+                    NftMintStatus.PENDING_ONCHAIN, "On-chain minting is not configured on the server yet.");
+        }
+
+        return MintPrereqs.ready(userNft.getId(), tokenUri, walletAddress, contractAddress, chainId);
+    }
+
+    private MintOutcome executeOutcome(MintPrereqs prereqs) {
+        if (!prereqs.canMint()) {
+            return MintOutcome.blocked(prereqs.blockingStatus(), prereqs.blockingReason());
+        }
+
+        try {
+            MintResult result = mintOnChain(prereqs.walletAddress(), prereqs.tokenUri());
+            log.info("[OnChainNftMintService] On-chain mint succeeded. nftId={}, tokenId={}, txHash={}",
+                    prereqs.userNftId(), result.tokenId(), result.transactionHash());
+            return MintOutcome.success(result);
+        } catch (Exception ex) {
+            String reason = abbreviate(ex.getMessage());
+            log.error("[OnChainNftMintService] On-chain mint failed. nftId={}, walletAddress={}, reason={}",
+                    prereqs.userNftId(), prereqs.walletAddress(), reason, ex);
+            return MintOutcome.failed(reason);
+        }
+    }
+
+    private void persistOutcome(UUID userNftId, MintPrereqs prereqs, MintOutcome outcome) {
+        newTransactionTemplate().executeWithoutResult(status ->
+                userNftRepository.findDetailedById(userNftId).ifPresentOrElse(nft -> {
+                    switch (outcome.status()) {
+                        case MINTED_ONCHAIN -> {
+                            MintResult r = outcome.mintResult();
+                            nft.markOnChainMinted(prereqs.tokenUri(), r.contractAddress(), r.chainId(),
+                                    r.tokenId(), r.transactionHash(), r.mintedAt());
+                        }
+                        case FAILED_ONCHAIN -> nft.markOnChainFailed(prereqs.tokenUri(), prereqs.contractAddress(),
+                                prereqs.chainId(), outcome.reason());
+                        case PENDING_WALLET -> nft.markPendingWallet(prereqs.tokenUri(), prereqs.contractAddress(),
+                                prereqs.chainId(), outcome.reason());
+                        default -> nft.markPendingOnChain(prereqs.tokenUri(), prereqs.contractAddress(),
+                                prereqs.chainId(), outcome.reason());
+                    }
+                }, () -> log.warn("[OnChainNftMintService] NFT not found when persisting mint result. nftId={}", userNftId))
+        );
+    }
+
+    private void runDeferredMint(UUID userNftId) {
+        try {
+            log.info("[OnChainNftMintService] Starting deferred mint. nftId={}", userNftId);
+            mintById(userNftId);
+        } catch (Exception exception) {
+            log.error("[OnChainNftMintService] Deferred mint callback failed before completion. nftId={}", userNftId, exception);
+        }
+    }
+
+    private void runDeferredRetry(UUID userId) {
+        try {
+            log.info("[OnChainNftMintService] Starting deferred retry. userId={}", userId);
+            int retried = retryMintsForUser(userId);
+            log.info("[OnChainNftMintService] Deferred retry finished. userId={}, attempted={}", userId, retried);
+        } catch (Exception exception) {
+            log.error("[OnChainNftMintService] Deferred retry callback failed before completion. userId={}", userId, exception);
+        }
     }
 
     private MintResult mintOnChain(String recipientWalletAddress, String tokenUri) throws Exception {
@@ -209,7 +281,7 @@ public class OnChainNftMintService {
 
         try {
             Credentials credentials = Credentials.create(blockchainProperties.getMinterPrivateKey());
-            RawTransactionManager transactionManager = new RawTransactionManager(
+            RawTransactionManager txManager = new RawTransactionManager(
                     web3j,
                     credentials,
                     blockchainProperties.getChainId()
@@ -221,7 +293,7 @@ public class OnChainNftMintService {
                     Collections.emptyList()
             );
 
-            EthSendTransaction transaction = transactionManager.sendTransaction(
+            EthSendTransaction transaction = txManager.sendTransaction(
                     resolveGasPrice(web3j),
                     BigInteger.valueOf(blockchainProperties.getGasLimit()),
                     normalize(blockchainProperties.getContractAddress()),
@@ -329,31 +401,36 @@ public class OnChainNftMintService {
     }
 
     private String resolveBaseUrlFromCurrentRequest() {
-        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-        if (!(requestAttributes instanceof ServletRequestAttributes servletRequestAttributes)) {
+        try {
+            org.springframework.web.context.request.RequestAttributes requestAttributes =
+                    org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (!(requestAttributes instanceof org.springframework.web.context.request.ServletRequestAttributes servletRequestAttributes)) {
+                return null;
+            }
+
+            HttpServletRequest request = servletRequestAttributes.getRequest();
+            String host = firstHeaderValue(request.getHeader("X-Forwarded-Host"));
+            String scheme = firstHeaderValue(request.getHeader("X-Forwarded-Proto"));
+
+            if (host != null) {
+                String resolvedScheme = scheme != null ? scheme : "https";
+                return normalizeBaseUrl(resolvedScheme + "://" + host);
+            }
+
+            String requestHost = normalize(request.getServerName());
+            String requestScheme = scheme != null ? scheme : normalize(request.getScheme());
+            if (requestHost == null || requestScheme == null) {
+                return null;
+            }
+
+            int port = request.getServerPort();
+            boolean defaultPort = ("http".equalsIgnoreCase(requestScheme) && port == 80)
+                    || ("https".equalsIgnoreCase(requestScheme) && port == 443);
+            String portSuffix = (port > 0 && !defaultPort) ? ":" + port : "";
+            return normalizeBaseUrl(requestScheme + "://" + requestHost + portSuffix);
+        } catch (Exception ignored) {
             return null;
         }
-
-        HttpServletRequest request = servletRequestAttributes.getRequest();
-        String host = firstHeaderValue(request.getHeader("X-Forwarded-Host"));
-        String scheme = firstHeaderValue(request.getHeader("X-Forwarded-Proto"));
-
-        if (host != null) {
-            String resolvedScheme = scheme != null ? scheme : "https";
-            return normalizeBaseUrl(resolvedScheme + "://" + host);
-        }
-
-        String requestHost = normalize(request.getServerName());
-        String requestScheme = scheme != null ? scheme : normalize(request.getScheme());
-        if (requestHost == null || requestScheme == null) {
-            return null;
-        }
-
-        int port = request.getServerPort();
-        boolean defaultPort = ("http".equalsIgnoreCase(requestScheme) && port == 80)
-                || ("https".equalsIgnoreCase(requestScheme) && port == 443);
-        String portSuffix = (port > 0 && !defaultPort) ? ":" + port : "";
-        return normalizeBaseUrl(requestScheme + "://" + requestHost + portSuffix);
     }
 
     private String firstHeaderValue(String headerValue) {
@@ -393,8 +470,19 @@ public class OnChainNftMintService {
         }
     }
 
+    private TransactionTemplate newReadOnlyTransactionTemplate() {
+        return newTransactionTemplate(TransactionDefinition.PROPAGATION_REQUIRES_NEW, true);
+    }
+
     private TransactionTemplate newTransactionTemplate() {
-        return new TransactionTemplate(transactionManager);
+        return newTransactionTemplate(TransactionDefinition.PROPAGATION_REQUIRES_NEW, false);
+    }
+
+    private TransactionTemplate newTransactionTemplate(int propagationBehavior, boolean readOnly) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(propagationBehavior);
+        transactionTemplate.setReadOnly(readOnly);
+        return transactionTemplate;
     }
 
     private String normalizeBaseUrl(String value) {
@@ -421,6 +509,49 @@ public class OnChainNftMintService {
         }
 
         return value.length() > 500 ? value.substring(0, 500) : value;
+    }
+
+    // ─── inner types ────────────────────────────────────────────────────────────
+
+    private record MintPrereqs(
+            UUID userNftId,
+            String tokenUri,
+            String walletAddress,
+            String contractAddress,
+            Long chainId,
+            NftMintStatus blockingStatus,
+            String blockingReason
+    ) {
+        boolean canMint() {
+            return blockingReason == null;
+        }
+
+        static MintPrereqs ready(UUID id, String tokenUri, String walletAddress, String contractAddress, Long chainId) {
+            return new MintPrereqs(id, tokenUri, walletAddress, contractAddress, chainId, null, null);
+        }
+
+        static MintPrereqs blocked(UUID id, String tokenUri, String contractAddress, Long chainId,
+                                   NftMintStatus status, String reason) {
+            return new MintPrereqs(id, tokenUri, null, contractAddress, chainId, status, reason);
+        }
+    }
+
+    private record MintOutcome(
+            NftMintStatus status,
+            String reason,
+            MintResult mintResult
+    ) {
+        static MintOutcome success(MintResult result) {
+            return new MintOutcome(NftMintStatus.MINTED_ONCHAIN, null, result);
+        }
+
+        static MintOutcome failed(String reason) {
+            return new MintOutcome(NftMintStatus.FAILED_ONCHAIN, reason, null);
+        }
+
+        static MintOutcome blocked(NftMintStatus status, String reason) {
+            return new MintOutcome(status, reason, null);
+        }
     }
 
     private record MintResult(
