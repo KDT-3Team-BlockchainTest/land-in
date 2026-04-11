@@ -51,6 +51,14 @@ export default function Join() {
     event.preventDefault();
     setError("");
 
+    const normalizedEmail = form.email.trim().toLowerCase();
+    const normalizedDisplayName = form.displayName.trim();
+
+    if (!normalizedDisplayName) {
+      setError("Please enter your name.");
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -64,7 +72,7 @@ export default function Join() {
     setLoading(true);
 
     try {
-      const profile = await signup(form.email, form.password, form.displayName);
+      const profile = await signup(normalizedEmail, form.password, normalizedDisplayName);
       navigate(profile.walletAddress ? "/" : "/wallet/connect", {
         replace: true,
         state: { nextPath: "/" },
@@ -95,6 +103,7 @@ export default function Join() {
               placeholder="Your name"
               className="join-input"
               autoComplete="name"
+              autoCorrect="off"
               required
             />
           </div>
@@ -110,6 +119,10 @@ export default function Join() {
               placeholder="your@email.com"
               className="join-input"
               autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              inputMode="email"
               required
             />
           </div>
@@ -125,6 +138,9 @@ export default function Join() {
               placeholder="At least 8 characters"
               className="join-input"
               autoComplete="new-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               minLength={8}
               required
             />
@@ -141,6 +157,9 @@ export default function Join() {
               placeholder="Re-enter your password"
               className="join-input"
               autoComplete="new-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               minLength={8}
               required
             />
