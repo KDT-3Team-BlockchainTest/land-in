@@ -71,6 +71,49 @@ function VerificationGuide() {
   );
 }
 
+function IosTagGuide() {
+  const faqItems = [
+    {
+      question: "Why is there no read button on iPhone?",
+      answer: "Safari does not let websites start NFC scans directly, so iPhone cannot use the same in-page scan button as Android.",
+    },
+    {
+      question: "How do I tag on iPhone?",
+      answer: "Keep this page open, then place the top of your iPhone near the real NFC tag. The tag should open Land-in automatically.",
+    },
+    {
+      question: "What if nothing happens?",
+      answer: "Check that the NFC tag is programmed with a Land-in URL, the phone is unlocked, and you already finished login, wallet connection, and event join.",
+    },
+  ];
+
+  return (
+    <section className="tag-page__guide-card tag-page__guide-card--ios">
+      <h2 className="tag-page__guide-title">iPhone Tag Guide</h2>
+      <div className="tag-page__guide-list">
+        {[
+          "Stay on this page after login.",
+          "Hold the top edge of your iPhone close to the physical NFC tag.",
+          "When Land-in opens with the tag URL, verification starts automatically.",
+        ].map((step, index) => (
+          <div key={step} className="tag-page__guide-item">
+            <span className="tag-page__guide-number">{index + 1}</span>
+            <p>{step}</p>
+          </div>
+        ))}
+      </div>
+      <div className="tag-page__faq-list">
+        {faqItems.map((item) => (
+          <article key={item.question} className="tag-page__faq-item">
+            <h3 className="tag-page__faq-question">{item.question}</h3>
+            <p className="tag-page__faq-answer">{item.answer}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ConfettiLayer() {
   const pieces = Array.from({ length: 24 }, (_, index) => ({
     id: index,
@@ -428,6 +471,24 @@ export default function TagPage() {
               <div className="tag-page__icon-shell">
                 <PhoneIcon className="tag-page__status-icon" />
               </div>
+              {isIos && !canUseWebNfc && (
+                <>
+                  <h2 className="tag-page__status-title">Ready To Tag On iPhone</h2>
+                  <p className="tag-page__status-description">
+                    Place the top of your iPhone near the real NFC tag. The tag should open Land-in and continue the verification automatically.
+                  </p>
+                  <div className="tag-page__platform-note">
+                    <p className="tag-page__status-description">
+                      There is no in-page scan button on iPhone because Safari does not expose Web NFC to websites.
+                    </p>
+                    <p className="tag-page__status-description">
+                      The physical NFC tag must open a Land-in URL like `/tag?tagUid=...` when tapped.
+                    </p>
+                  </div>
+                </>
+              )}
+              {!(isIos && !canUseWebNfc) && (
+                <>
               <h2 className="tag-page__status-title">인증 준비 완료</h2>
               <p className="tag-page__status-description">
                 태그를 직접 읽거나, 테스트용 tag UID를 입력해 주세요.
@@ -473,8 +534,10 @@ export default function TagPage() {
                   </p>
                 </div>
               )}
+                </>
+              )}
             </section>
-            <VerificationGuide />
+            {isIos && !canUseWebNfc ? <IosTagGuide /> : <VerificationGuide />}
           </>
         )}
 
