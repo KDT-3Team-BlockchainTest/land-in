@@ -23,7 +23,7 @@ function App() {
         </div>
         <button
           type="button"
-          className="counter"
+          className="counter cursor-pointer select-none"
           onClick={() => setCount((count) => count + 1)}
         >
           Count is {count}
