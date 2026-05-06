@@ -1,0 +1,157 @@
+Table users {
+  id bigint [pk, increment]
+  email varchar [not null]
+  password varchar [not null]
+  name varchar
+  nickname varchar
+  phone varchar
+  role varchar // LANDLORD, TENANT, ADMIN
+  status varchar // ACTIVE, DELETED, SUSPENDED
+  deleted_at datetime
+  created_at datetime
+}
+
+Table spaces {
+  id bigint [pk, increment]
+  landlord_id bigint [not null]
+  title varchar
+  description text
+  address varchar
+  latitude decimal
+  longitude decimal
+  deposit int
+  monthly_rent int
+  area decimal
+  floor int
+  is_available boolean
+  status varchar // PENDING, APPROVED, REJECTED, HIDDEN, SUSPICIOUS
+  created_at datetime
+  deleted_at datetime
+}
+
+Table space_documents {
+  id bigint [pk, increment]
+  space_id bigint
+  file_url varchar
+  file_name varchar
+  document_type varchar
+  created_at datetime
+}
+
+Table space_images {
+  id bigint [pk, increment]
+  space_id bigint
+  image_url varchar
+  sort_order int
+}
+
+Table verifications {
+  id bigint [pk, increment]
+  space_id bigint
+  admin_id bigint
+  status varchar // PENDING, APPROVED, REJECTED
+  reason text
+  verified_at datetime
+}
+
+Table chat_rooms {
+  id bigint [pk, increment]
+  space_id bigint
+  status varchar // ACTIVE, CLOSED
+  created_at datetime
+}
+
+Table chat_participants {
+  id bigint [pk, increment]
+  chat_room_id bigint
+  user_id bigint
+  joined_at datetime
+  left_at datetime
+}
+
+Table chat_messages {
+  id bigint [pk, increment]
+  chat_room_id bigint
+  sender_id bigint
+  message text
+  created_at datetime
+  deleted_at datetime
+}
+
+Table transactions {
+  id bigint [pk, increment]
+  space_id bigint
+  landlord_id bigint
+  tenant_id bigint
+  status varchar // REQUESTED, CONTRACTED, CANCELLED, COMPLETED
+  start_date date
+  end_date date
+  created_at datetime
+}
+
+Table payments {
+  id bigint [pk, increment]
+  transaction_id bigint
+  payer_id bigint
+  amount int
+  status varchar // READY, PAID, FAILED, REFUNDED
+  paid_at datetime
+}
+
+Table reviews {
+  id bigint [pk, increment]
+  transaction_id bigint
+  reviewer_id bigint
+  rating int
+  content text
+  created_at datetime
+  deleted_at datetime
+}
+
+Table favorites {
+  id bigint [pk, increment]
+  user_id bigint
+  space_id bigint
+  created_at datetime
+}
+
+Table reports {
+  id bigint [pk, increment]
+  reporter_id bigint
+  space_id bigint
+  reason text
+  status varchar // PENDING, CHECKING, RESOLVED, REJECTED
+  created_at datetime
+}
+
+/* Relations */
+
+Ref: spaces.landlord_id > users.id
+
+Ref: space_documents.space_id > spaces.id
+Ref: space_images.space_id > spaces.id
+
+Ref: verifications.space_id > spaces.id
+Ref: verifications.admin_id > users.id
+
+Ref: chat_rooms.space_id > spaces.id
+Ref: chat_participants.chat_room_id > chat_rooms.id
+Ref: chat_participants.user_id > users.id
+Ref: chat_messages.chat_room_id > chat_rooms.id
+Ref: chat_messages.sender_id > users.id
+
+Ref: transactions.space_id > spaces.id
+Ref: transactions.landlord_id > users.id
+Ref: transactions.tenant_id > users.id
+
+Ref: payments.transaction_id > transactions.id
+Ref: payments.payer_id > users.id
+
+Ref: reviews.transaction_id > transactions.id
+Ref: reviews.reviewer_id > users.id
+
+Ref: favorites.user_id > users.id
+Ref: favorites.space_id > spaces.id
+
+Ref: reports.reporter_id > users.id
+Ref: reports.space_id > spaces.id
