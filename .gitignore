@@ -3,22 +3,67 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build outputs
+# Frontend build outputs
 dist/
-build/
+dist-ssr/
 .next/
 out/
+coverage/
+*.tsbuildinfo
 
-# Environment variables
+# Java / Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+HELP.md
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+!**/.env.example
+*.local
 
-# IDE
-.vscode/
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDE / editors
 .idea/
+.vscode/
+!.vscode/extensions.json
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+*.iws
+*.iml
+*.ipr
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 *.swp
 *.swo
 *~
@@ -28,21 +73,7 @@ out/
 Thumbs.db
 desktop.ini
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Testing
-coverage/
-
-# TypeScript
-*.tsbuildinfo
-
-# Misc
+# Misc caches
 .cache/
 .temp/
 .tmp/
