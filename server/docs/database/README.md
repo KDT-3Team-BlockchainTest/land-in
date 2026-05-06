@@ -1,4 +1,4 @@
-# 📦 Database Schema (capstone_db)
+#  Database Schema (capstone_db)
 
 ## 1. 개요
 본 프로젝트는 공실 임대/매칭 플랫폼으로,  
@@ -8,7 +8,7 @@
 
 ## 2. 테이블 구성
 
-### 👤 users (사용자)
+###  users (사용자)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 사용자 ID |
@@ -24,7 +24,7 @@
 
 ---
 
-### 🏢 spaces (공실)
+###  spaces (공실)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 공실 ID |
@@ -45,7 +45,7 @@
 
 ---
 
-### 📄 space_documents (공실 문서)
+###  space_documents (공실 문서)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 문서 ID |
@@ -57,7 +57,7 @@
 
 ---
 
-### 🖼 space_images (공실 이미지)
+###  space_images (공실 이미지)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 이미지 ID |
@@ -67,7 +67,7 @@
 
 ---
 
-### ✅ verifications (공실 인증)
+###  verifications (공실 인증)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 인증 ID |
@@ -79,7 +79,7 @@
 
 ---
 
-### 💬 chat_rooms (채팅방)
+###  chat_rooms (채팅방)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 채팅방 ID |
@@ -89,7 +89,7 @@
 
 ---
 
-### 👥 chat_participants (채팅 참여자)
+###  chat_participants (채팅 참여자)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 참여 ID |
@@ -100,7 +100,7 @@
 
 ---
 
-### ✉️ chat_messages (채팅 메시지)
+###  chat_messages (채팅 메시지)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 메시지 ID |
@@ -112,7 +112,7 @@
 
 ---
 
-### 📑 transactions (거래)
+###  transactions (거래)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 거래 ID |
@@ -126,7 +126,7 @@
 
 ---
 
-### 💰 payments (결제)
+###  payments (결제)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 결제 ID |
@@ -138,7 +138,7 @@
 
 ---
 
-### ⭐ reviews (후기)
+###  reviews (후기)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 후기 ID |
@@ -151,7 +151,7 @@
 
 ---
 
-### ❤️ favorites (찜)
+###  favorites (찜)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 찜 ID |
@@ -161,7 +161,7 @@
 
 ---
 
-### 🚨 reports (신고)
+###  reports (신고)
 | 컬럼명 | 설명 |
 |--------|------|
 | id | 신고 ID |
@@ -204,3 +204,9 @@ server/docs/database/
 ├── schema.sql
 ├── erd.dbml
 └── README.md
+
+## DB 환경
+
+- DBMS: PostgreSQL
+- ORM: JPA
+- schema.sql은 PostgreSQL 기준으로 작성
