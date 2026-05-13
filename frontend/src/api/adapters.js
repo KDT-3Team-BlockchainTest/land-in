@@ -28,6 +28,17 @@ function daysLeft(endDate) {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
+function daysUntil(startDate) {
+  if (!startDate) return 0;
+  const diff = new Date(startDate) - new Date();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+function progressPercent(collected, total) {
+  if (!total) return 0;
+  return Math.min(100, Math.round((collected / total) * 100));
+}
+
 const COLLECTION_STATUS_CONFIG = {
   ONGOING:   { label: '진행 중',  accentColor: '#fe6b70' },
   COMPLETED: { label: '완성',    accentColor: '#22c55e' },
@@ -46,6 +57,7 @@ export function adaptEventSummary(ev, joinedIds = [], completedMap = {}) {
     flag: toFlag(ev.country),
     period: `${formatDate(ev.startDate)} - ${formatDate(ev.endDate)}`,
     daysLeft: daysLeft(ev.endDate),
+    daysUntilOpen: daysUntil(ev.startDate),
     landmarkCount: ev.totalSteps,
     collected: completedMap[ev.id] ?? 0,
     image: ev.heroImageUrl,
@@ -56,10 +68,10 @@ export function adaptEventSummary(ev, joinedIds = [], completedMap = {}) {
     partnerName: ev.partnerName,
     partnerLogoUrl: ev.partnerLogoUrl,
     rewardLabel: ev.partnerName ? `${ev.partnerName} 혜택` : '컬렉션 완성 리워드',
-    rewardTitle: '컬렉션 완성 리워드',
-    rewardDescription: ev.partnerName
+    rewardTitle: ev.rewardTitle || '컬렉션 완성 리워드',
+    rewardDescription: ev.rewardDescription || (ev.partnerName
       ? `${ev.partnerName} 파트너 혜택을 받아보세요.`
-      : '컬렉션 완성 시 특별 리워드가 지급됩니다.',
+      : '컬렉션 완성 시 특별 리워드가 지급됩니다.'),
     highlights: ev.partnerName ? [`${ev.partnerName} 파트너 혜택`, `${ev.totalSteps}개 랜드마크`] : [`${ev.totalSteps}개 랜드마크`],
     participationState: ev.status === 'ACTIVE' ? 'joinable' : ev.status.toLowerCase(),
     detailStatusLabel: isJoined ? '참여 중' : '참여 가능',
@@ -80,6 +92,7 @@ export function adaptEventDetail(ev) {
     flag: toFlag(ev.country),
     period: `${formatDate(ev.startDate)} - ${formatDate(ev.endDate)}`,
     daysLeft: daysLeft(ev.endDate),
+    daysUntilOpen: daysUntil(ev.startDate),
     landmarkCount: ev.totalSteps,
     collected: ev.completedSteps ?? 0,
     image: ev.heroImageUrl,
@@ -92,10 +105,13 @@ export function adaptEventDetail(ev) {
     partnerName: ev.partnerName,
     partnerLogoUrl: ev.partnerLogoUrl,
     rewardLabel: ev.partnerName ? `${ev.partnerName} 혜택` : '컬렉션 완성 리워드',
-    rewardTitle: '컬렉션 완성 리워드',
-    rewardDescription: ev.partnerName
+    rewardTitle: ev.rewardTitle || '컬렉션 완성 리워드',
+    rewardDescription: ev.rewardDescription || (ev.partnerName
       ? `${ev.partnerName} 파트너 혜택을 받아보세요.`
-      : '컬렉션 완성 시 특별 리워드가 지급됩니다.',
+      : '컬렉션 완성 시 특별 리워드가 지급됩니다.'),
+    rewardHowToUse: ev.rewardHowToUse,
+    rewardEmoji: ev.rewardEmoji,
+    rewardAccentColor: ev.rewardAccentColor,
     highlights: ev.partnerName ? [`${ev.partnerName} 파트너 혜택`, `${ev.totalSteps}개 랜드마크`] : [`${ev.totalSteps}개 랜드마크`],
     participationState: ev.status === 'ACTIVE' ? 'joinable' : ev.status.toLowerCase(),
     detailStatusLabel: ev.joined ? '참여 중' : '참여 가능',
@@ -134,18 +150,22 @@ export function adaptCollection(col, nfts = []) {
     region: `${col.country} · ${col.city}`,
     flag: toFlag(col.country),
     period: `${formatDate(col.startDate)} - ${formatDate(col.endDate)}`,
+    daysLeft: daysLeft(col.endDate),
     image: col.heroImageUrl,
     themeColor: col.themeColor || '#fe6b70',
     accentColor: cfg.accentColor,
     collectionStatus: col.collectionStatus.toLowerCase(),
     statusLabel: cfg.label,
     tag: col.collectionStatus.toLowerCase(),
+    statusTag: col.collectionStatus.toLowerCase(),
     landmarkCount: col.totalSteps,
     collected: col.completedSteps,
+    progressPercent: progressPercent(col.completedSteps, col.totalSteps),
     partnerName: col.partnerName,
-    rewardDescription: col.partnerName
+    rewardTitle: col.rewardTitle || '컬렉션 완성 리워드',
+    rewardDescription: col.rewardDescription || (col.partnerName
       ? `${col.partnerName} 파트너 혜택`
-      : '컬렉션 완성 리워드',
+      : '컬렉션 완성 리워드'),
     collectedNfts: colNfts.map(adaptNft),
     routeSteps: [],
   };
@@ -156,8 +176,10 @@ export function adaptNft(nft) {
   return {
     id: nft.id,
     name: nft.name,
-    placeName: nft.name,
+    placeName: nft.stepPlaceName || nft.name,
     image: nft.imageUrl,
+    nftImage: nft.imageUrl,
+    stepImage: nft.stepImageUrl,
     serial: `#${nft.id.slice(0, 6).toUpperCase()}`,
     description: `${nft.eventTitle} 컬렉션 NFT`,
     rarity: nft.rarity?.toLowerCase(),

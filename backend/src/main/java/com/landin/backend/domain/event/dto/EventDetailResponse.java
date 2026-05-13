@@ -2,6 +2,7 @@ package com.landin.backend.domain.event.dto;
 
 import com.landin.backend.domain.event.entity.Event;
 import com.landin.backend.domain.event.entity.EventStatus;
+import com.landin.backend.domain.reward.entity.RewardTemplate;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -27,6 +28,11 @@ public class EventDetailResponse {
     private String partnerName;
     private String partnerLogoUrl;
     private String themeColor;
+    private String rewardTitle;
+    private String rewardDescription;
+    private String rewardHowToUse;
+    private String rewardEmoji;
+    private String rewardAccentColor;
     private List<StepResponse> steps;
     private int completedSteps;
     private int totalSteps;
@@ -34,6 +40,12 @@ public class EventDetailResponse {
 
     public static EventDetailResponse of(Event event, List<StepResponse> steps,
                                           int completedSteps, boolean joined) {
+        return of(event, steps, completedSteps, joined, null);
+    }
+
+    public static EventDetailResponse of(Event event, List<StepResponse> steps,
+                                          int completedSteps, boolean joined,
+                                          RewardTemplate rewardTemplate) {
         return EventDetailResponse.builder()
                 .id(event.getId())
                 .title(event.getTitle())
@@ -50,6 +62,11 @@ public class EventDetailResponse {
                 .partnerName(event.getPartnerName())
                 .partnerLogoUrl(event.getPartnerLogoUrl())
                 .themeColor(event.getThemeColor())
+                .rewardTitle(rewardTemplate != null ? rewardTemplate.getTitle() : null)
+                .rewardDescription(rewardTemplate != null ? rewardTemplate.getDescription() : null)
+                .rewardHowToUse(rewardTemplate != null ? rewardTemplate.getHowToUse() : null)
+                .rewardEmoji(rewardTemplate != null ? rewardTemplate.getEmoji() : null)
+                .rewardAccentColor(rewardTemplate != null ? rewardTemplate.getAccentColor() : null)
                 .steps(steps)
                 .completedSteps(completedSteps)
                 .totalSteps(steps.size())
