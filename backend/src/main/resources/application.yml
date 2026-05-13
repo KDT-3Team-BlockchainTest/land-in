@@ -9,6 +9,11 @@ spring:
     hikari:
       connection-init-sql: "SET NAMES utf8mb4"
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   jpa:
     open-in-view: false
     hibernate:
@@ -26,8 +31,10 @@ logging:
 
 app:
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+  upload:
+    dir: ${APP_UPLOAD_DIR:uploads}
   cors:
-    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://localhost:3000}
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000}
 
 blockchain:
   enabled: ${BLOCKCHAIN_ENABLED:false}

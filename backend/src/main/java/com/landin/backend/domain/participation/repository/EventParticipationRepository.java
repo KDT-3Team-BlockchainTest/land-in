@@ -11,6 +11,8 @@ public interface EventParticipationRepository extends JpaRepository<EventPartici
 
     boolean existsByUserIdAndEventId(UUID userId, String eventId);
 
+    boolean existsByEventId(String eventId);
+
     List<EventParticipation> findByUserId(UUID userId);
 
     @Query("SELECT ep.event.id FROM EventParticipation ep WHERE ep.user.id = :userId")

@@ -24,9 +24,15 @@ public class EventSummaryResponse {
     private String partnerName;
     private String partnerLogoUrl;
     private String themeColor;
+    private String rewardTitle;
+    private String rewardDescription;
     private int totalSteps;
 
     public static EventSummaryResponse of(Event event, int totalSteps) {
+        return of(event, totalSteps, null, null);
+    }
+
+    public static EventSummaryResponse of(Event event, int totalSteps, String rewardTitle, String rewardDescription) {
         return EventSummaryResponse.builder()
                 .id(event.getId())
                 .title(event.getTitle())
@@ -41,6 +47,8 @@ public class EventSummaryResponse {
                 .partnerName(event.getPartnerName())
                 .partnerLogoUrl(event.getPartnerLogoUrl())
                 .themeColor(event.getThemeColor())
+                .rewardTitle(rewardTitle)
+                .rewardDescription(rewardDescription)
                 .totalSteps(totalSteps)
                 .build();
     }

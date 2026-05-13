@@ -30,7 +30,19 @@ public enum ErrorCode {
 
     // Reward
     REWARD_NOT_FOUND(HttpStatus.NOT_FOUND, "리워드를 찾을 수 없습니다."),
-    REWARD_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "사용할 수 없는 리워드입니다. available 상태만 사용 가능합니다.");
+    REWARD_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "사용할 수 없는 리워드입니다. available 상태만 사용 가능합니다."),
+
+    // Admin
+    ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "관리자를 찾을 수 없습니다."),
+    ADMIN_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용 중인 관리자 이메일입니다."),
+    ADMIN_FORBIDDEN(HttpStatus.FORBIDDEN, "다른 제휴사의 자원은 수정할 수 없습니다."),
+    EVENT_ID_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 이벤트 ID 입니다."),
+    DUPLICATE_TAG_UID(HttpStatus.CONFLICT, "이미 등록된 NFC 태그 UID 입니다."),
+    DUPLICATE_STEP_ORDER(HttpStatus.CONFLICT, "이미 사용된 스텝 순서입니다."),
+    STEP_NOT_FOUND(HttpStatus.NOT_FOUND, "스텝을 찾을 수 없습니다."),
+    INVALID_UPLOAD(HttpStatus.BAD_REQUEST, "업로드할 수 없는 파일입니다."),
+    STEP_PLACE_IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "각 스텝에는 장소 이미지가 필요합니다."),
+    STEP_NFT_IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "각 스텝에는 NFT 이미지가 필요합니다.");
 
     private final HttpStatus status;
     private final String message;
