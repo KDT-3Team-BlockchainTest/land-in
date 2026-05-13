@@ -38,3 +38,6 @@ out/
 
 ### Local uploads ###
 uploads/
+
+### Local run logs ###
+*.log

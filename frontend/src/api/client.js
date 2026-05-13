@@ -36,6 +36,7 @@ async function request(method, path, body, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers,
+    cache: method === "GET" ? "no-store" : "default",
     body: body != null ? JSON.stringify(body) : undefined,
   });
 
