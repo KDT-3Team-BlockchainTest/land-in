@@ -1,5 +1,5 @@
 import "./EventDetailPage.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { adaptEventDetail } from "../../api/adapters";
 import { eventsApi } from "../../api/events";
@@ -18,11 +18,37 @@ export default function EventDetailPage() {
   const [raw, setRaw] = useState(null);
   const [notFound, setNotFound] = useState(false);
 
-  useEffect(() => {
+  const loadEvent = useCallback(() => {
+    if (!eventId) return;
     eventsApi.detail(eventId)
-      .then(setRaw)
-      .catch((err) => { if (err.status === 404) setNotFound(true); });
+      .then((response) => {
+        setRaw(response);
+        setNotFound(false);
+      })
+      .catch((err) => {
+        if (err.status === 404) setNotFound(true);
+      });
   }, [eventId]);
+
+  useEffect(() => {
+    loadEvent();
+  }, [loadEvent]);
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        loadEvent();
+      }
+    }
+
+    window.addEventListener("focus", loadEvent);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", loadEvent);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [loadEvent]);
 
   if (notFound) return <Navigate to="/" replace />;
   if (!raw) return null;
