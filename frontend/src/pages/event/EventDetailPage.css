@@ -1,10 +1,13 @@
 .event-detail-page {
-  min-height: 100vh;
+  min-height: 100%;
   background: var(--color-bg);
 }
 
 .event-detail-page__hero-wrap {
-  margin-top: 56px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 .event-detail-page__content {
