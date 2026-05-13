@@ -22,6 +22,8 @@ public class CollectionResponse {
     private String heroImageUrl;
     private String themeColor;
     private String partnerName;
+    private String rewardTitle;
+    private String rewardDescription;
     private LocalDate startDate;
     private LocalDate endDate;
     private LocalDateTime joinedAt;

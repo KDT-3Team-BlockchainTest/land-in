@@ -35,4 +35,12 @@ public class NfcTag {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    public void updateTagUid(String tagUid) {
+        this.tagUid = tagUid;
+    }
+
+    public void updateActive(boolean active) {
+        this.active = active;
+    }
 }

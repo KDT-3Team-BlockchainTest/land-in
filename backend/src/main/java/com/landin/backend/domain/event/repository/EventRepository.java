@@ -10,4 +10,5 @@ public interface EventRepository extends JpaRepository<Event, String> {
     List<Event> findByStatus(EventStatus status);
     List<Event> findByFeaturedTrue();
     List<Event> findByStatusIn(List<EventStatus> statuses);
+    List<Event> findByPartnerNameOrderByCreatedAtDesc(String partnerName);
 }
