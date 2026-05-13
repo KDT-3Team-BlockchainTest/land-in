@@ -246,7 +246,13 @@ export default function EventEditorPage({ mode }) {
   const addStep = () => {
     setForm((prev) => {
       const nextOrder = Math.max(0, ...prev.steps.map((step) => Number(step.orderIndex) || 0)) + 1;
-      return { ...prev, steps: [...prev.steps, emptyStep(nextOrder, false)] };
+      return {
+        ...prev,
+        steps: [
+          ...prev.steps.map((step) => ({ ...step, finalStep: false })),
+          emptyStep(nextOrder, true),
+        ],
+      };
     });
   };
 
