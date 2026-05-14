@@ -1,0 +1,197 @@
+.save-page {
+  padding: 24px 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.save-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0 0 4px;
+}
+
+.save-count {
+  font-size: 13px;
+  color: var(--gray-400);
+  margin: 0 0 16px;
+}
+
+.save-search {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.save-search input {
+  width: 100%;
+  padding: 13px 16px 13px 44px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  outline: none;
+  background: var(--white);
+  transition: border-color 0.2s;
+}
+
+.save-search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(74, 124, 255, 0.1);
+}
+
+.save-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.save-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--gray-100);
+  border-radius: 50%;
+  font-size: 12px;
+  color: var(--gray-500);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-search-clear:hover {
+  background: var(--gray-200);
+}
+
+.save-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.save-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.save-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 16px rgba(74, 124, 255, 0.1);
+}
+
+.save-card-thumb {
+  height: 130px;
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 36px;
+}
+
+.save-heart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  font-size: 16px;
+  color: var(--red);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  transition: transform 0.15s;
+}
+
+.save-heart:hover {
+  transform: scale(1.15);
+}
+
+.save-card-info {
+  padding: 14px 16px 16px;
+}
+
+.save-card-info h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.save-card-info p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gray-400);
+}
+
+.save-deposit {
+  color: var(--gray-400) !important;
+  margin-top: 2px !important;
+}
+
+.save-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--gray-300);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.save-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.save-pagination button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--gray-200);
+  background: var(--white);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-pagination button:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.save-pagination button.active {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+.save-pagination button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+@media (max-width: 760px) {
+  .save-page { padding: 16px; }
+  .save-grid { grid-template-columns: repeat(2, 1fr); }
+}
