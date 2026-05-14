@@ -2,7 +2,31 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew compileJava)",
-      "Bash(./gradlew compileJava --info)"
+      "Bash(./gradlew compileJava --info)",
+      "Bash(curl -s -X POST https://land-in-production.up.railway.app/api/auth/signup -H \"Content-Type: application/json\" -d '{\"email\":\"test_check@test.com\",\"password\":\"Test1234!\",\"displayName\":\"테스트\"}')",
+      "Bash(curl -s -X POST https://land-in-production.up.railway.app/api/auth/signup -H 'Content-Type: application/json' -d '{\"email\":\"test_check2@test.com\",\"password\":\"Test1234!\",\"displayName\":\"테스트\"}' -v)",
+      "Bash(curl -s -X POST https://land-in-production.up.railway.app/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"test@test.com\",\"password\":\"Test1234!\"}')",
+      "Bash(curl -s https://land-in-production.up.railway.app/actuator/health)",
+      "Bash(railway logs:*)",
+      "Bash(curl -s -X POST https://land-in-production.up.railway.app/api/auth/signup -H 'Content-Type: application/json' -d '{\"email\":\"bad\",\"password\":\"x\",\"displayName\":\"\"}')",
+      "Bash(curl -s -X OPTIONS https://land-in-production.up.railway.app/api/auth/signup -H 'Origin: https://land-in-eight.vercel.app' -H 'Access-Control-Request-Method: POST' -o /dev/null -w '%{http_code}')",
+      "Bash(curl -s -X POST https://land-in-production.up.railway.app/api/auth/signup -H 'Content-Type: application/json' -d '{\"email\":\"__TRACKED_VAR__\",\"password\":\"Test1234!\",\"displayName\":\"테스트유저\"}')",
+      "Bash(curl -s -X POST https://land-in-production.up.railway.app/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"demo@landin.local\",\"password\":\"password\"}')",
+      "Bash(curl -s https://land-in-production.up.railway.app/api/auth/me -H 'Authorization: Bearer invalid_token')",
+      "Bash(find backend/src -name \"JwtProperties.java\" -exec cat {} \\\\;)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(winpty gh:*)",
+      "Bash(./gradlew compileJava -q)",
+      "Bash(./gradlew clean *)",
+      "Bash(./gradlew compileTestJava)",
+      "mcp__ide__getDiagnostics",
+      "PowerShell(Get-Command *)",
+      "PowerShell(Test-Path *)",
+      "Bash(git commit *)"
     ]
   }
 }
