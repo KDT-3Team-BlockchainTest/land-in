@@ -10,11 +10,13 @@ import ProgressBanner from "../../components/common/ProgressBanner/ProgressBanne
 import SectionHeader from "../../components/common/SectionHeader/SectionHeader";
 import UpcomingEventCard from "../../components/common/UpcomingEventCard/UpcomingEventCard";
 import { useAuth } from "../../contexts/useAuth";
+import { useLanguage } from "../../contexts/useLanguage";
 import useJoinedEventIds from "../../hooks/useJoinedEventIds";
 
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { joinedEventIds, joinEvent } = useJoinedEventIds();
   const [events, setEvents] = useState([]);
 
@@ -27,26 +29,31 @@ export default function Home() {
   const activeEvents = adapted.filter((event) => event.status === "active");
   const upcomingEvents = adapted.filter((event) => event.status === "upcoming");
   const ongoingCount = joinedEventIds.length;
+  const progressDescription =
+    ongoingCount === 1
+      ? t("home.progressDescriptionOne")
+      : t("home.progressDescriptionMany", { count: ongoingCount });
 
   return (
     <div className="page-layout">
       <main className="home-page__content">
-        <section className="home-page__intro" aria-label="Home intro">
+        <section className="home-page__intro" aria-label={t("home.intro")}>
           <p className="home-page__greeting">
-            Hello, <span>{user?.displayName ?? "Traveler"}</span> <span aria-hidden="true">.</span>
+            {t("home.greeting")} <span>{user?.displayName ?? t("home.traveler")}</span>{" "}
+            <span aria-hidden="true">.</span>
           </p>
-          <h1 className="page-title">Find your next landmark route.</h1>
+          <h1 className="page-title">{t("home.title")}</h1>
         </section>
 
         <ProgressBanner
-          title="Current progress"
-          description={`You are exploring ${ongoingCount} route${ongoingCount === 1 ? "" : "s"} right now.`}
+          title={t("home.progressTitle")}
+          description={progressDescription}
           onClick={() => navigate("/my-progress")}
         />
 
         {featuredEvent && (
           <section className="home-page__section">
-            <SectionHeader title="Featured event" description="See the route and reward details at a glance." />
+            <SectionHeader title={t("home.featuredTitle")} description={t("home.featuredDescription")} />
             <FeaturedEventCard event={featuredEvent} />
           </section>
         )}
@@ -54,9 +61,9 @@ export default function Home() {
         {activeEvents.length > 0 && (
           <section className="home-page__section">
             <SectionHeader
-              title="Active events"
-              description="Join a route and keep collecting stamps."
-              actionLabel="View all"
+              title={t("home.activeTitle")}
+              description={t("home.activeDescription")}
+              actionLabel={t("home.activeAction")}
             />
             <div className="home-page__active-scroller">
               <div className="home-page__active-track">
@@ -76,9 +83,9 @@ export default function Home() {
         {upcomingEvents.length > 0 && (
           <section className="home-page__section">
             <SectionHeader
-              title="Upcoming campaigns"
-              description="Preview future routes before they open."
-              actionLabel="Notify me"
+              title={t("home.upcomingTitle")}
+              description={t("home.upcomingDescription")}
+              actionLabel={t("home.upcomingAction")}
             />
             <div className="home-page__upcoming-list">
               {upcomingEvents.map((event) => (
