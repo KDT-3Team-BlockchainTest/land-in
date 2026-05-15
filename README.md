@@ -58,13 +58,55 @@ npm run dev
 
 ### 모바일 앱 (유저)
 
+**방법 1 — Expo Go (빠른 테스트, NFC 제외)**
+
 ```bash
 cd mobile
 npm install
 npx expo start
 ```
 
-> NFC 기능은 Expo Dev Build 필요 → `MOBILE_SETUP.md` 참조
+터미널에 QR 코드가 뜨면 폰에서 **Expo Go** 앱으로 스캔하면 바로 실행돼요.
+- Android: [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
+- iOS: [App Store](https://apps.apple.com/app/expo-go/id982107779)
+
+**방법 2 — Dev Build (NFC 포함 전체 기능)**
+
+```bash
+# EAS CLI 설치 (최초 1회)
+npm install -g eas-cli
+eas login        # expo.dev 계정 필요
+
+# Dev Build 생성 (클라우드 빌드, 10~15분 소요)
+cd mobile
+eas init
+eas build --platform android --profile development
+
+# 빌드된 .apk 폰에 설치 후 실행
+npx expo start --dev-client
+```
+
+**⚠️ API 서버 주소 설정 (실제 기기 사용 시)**
+
+`mobile/app.json` 의 `apiBaseUrl` 을 PC의 로컬 IP로 변경하세요.
+
+```json
+"extra": {
+  "apiBaseUrl": "http://192.168.x.x:8080/api"
+}
+```
+
+PC IP 확인 방법 (Windows):
+```bash
+ipconfig
+# IPv4 주소 (192.168.x.x) 사용
+```
+
+| 환경 | 주소 |
+|------|------|
+| Android 에뮬레이터 | `http://10.0.2.2:8080/api` (기본값) |
+| 실제 안드로이드 폰 | `http://192.168.x.x:8080/api` |
+| iOS 시뮬레이터 | `http://localhost:8080/api` |
 
 ### 모바일 어드민
 
@@ -72,6 +114,7 @@ npx expo start
 cd mobile-admin
 npm install
 npx expo start
+# NFC 없음 → Expo Go로 바로 실행 가능
 ```
 
 ---
