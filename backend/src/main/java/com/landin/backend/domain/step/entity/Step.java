@@ -53,4 +53,20 @@ public class Step {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    public void updateFromAdmin(
+            String placeName,
+            String placeDescription,
+            String imageUrl,
+            BigDecimal lat,
+            BigDecimal lng,
+            boolean finalStep
+    ) {
+        this.placeName = placeName;
+        this.placeDescription = placeDescription;
+        this.imageUrl = imageUrl;
+        this.lat = lat;
+        this.lng = lng;
+        this.finalStep = finalStep;
+    }
 }

@@ -479,7 +479,8 @@ public class OnChainNftMintService {
     }
 
     private TransactionTemplate newTransactionTemplate(int propagationBehavior, boolean readOnly) {
-        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        TransactionTemplate transactionTemplate = new TransactionTemplate(
+                Objects.requireNonNull(transactionManager, "transactionManager must not be null"));
         transactionTemplate.setPropagationBehavior(propagationBehavior);
         transactionTemplate.setReadOnly(readOnly);
         return transactionTemplate;

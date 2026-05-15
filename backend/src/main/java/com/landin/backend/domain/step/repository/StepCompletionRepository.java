@@ -20,4 +20,6 @@ public interface StepCompletionRepository extends JpaRepository<StepCompletion, 
     long countByUserIdAndStepEventId(UUID userId, String eventId);
 
     long countByUserId(UUID userId);
+
+    boolean existsByStepId(UUID stepId);
 }

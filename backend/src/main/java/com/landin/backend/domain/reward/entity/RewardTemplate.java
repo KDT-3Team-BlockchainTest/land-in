@@ -39,4 +39,22 @@ public class RewardTemplate {
 
     private String emoji;
     private String accentColor;
+
+    public void updateFromAdmin(
+            String title,
+            String description,
+            String partnerName,
+            String howToUse,
+            int validityDays,
+            String emoji,
+            String accentColor
+    ) {
+        this.title = title;
+        this.description = description;
+        this.partnerName = partnerName;
+        this.howToUse = howToUse;
+        this.validityDays = validityDays;
+        this.emoji = emoji;
+        this.accentColor = accentColor;
+    }
 }

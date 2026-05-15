@@ -45,4 +45,30 @@ public class Event extends BaseTimeEntity {
     private String partnerName;
     private String partnerLogoUrl;
     private String themeColor;
+
+    public void updateFromAdmin(
+            String title,
+            String city,
+            String country,
+            EventStatus status,
+            boolean featured,
+            LocalDate startDate,
+            LocalDate endDate,
+            String description,
+            String heroImageUrl,
+            String partnerName,
+            String themeColor
+    ) {
+        this.title = title;
+        this.city = city;
+        this.country = country;
+        this.status = status;
+        this.featured = featured;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.description = description;
+        this.heroImageUrl = heroImageUrl;
+        this.partnerName = partnerName;
+        this.themeColor = themeColor;
+    }
 }

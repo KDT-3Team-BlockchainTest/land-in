@@ -5,6 +5,8 @@ import com.landin.backend.domain.event.entity.Event;
 import com.landin.backend.domain.event.entity.EventStatus;
 import com.landin.backend.domain.participation.entity.EventParticipation;
 import com.landin.backend.domain.participation.repository.EventParticipationRepository;
+import com.landin.backend.domain.reward.entity.RewardTemplate;
+import com.landin.backend.domain.reward.repository.RewardTemplateRepository;
 import com.landin.backend.domain.step.repository.StepCompletionRepository;
 import com.landin.backend.domain.step.repository.StepRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class CollectionService {
     private final EventParticipationRepository participationRepository;
     private final StepRepository stepRepository;
     private final StepCompletionRepository stepCompletionRepository;
+    private final RewardTemplateRepository rewardTemplateRepository;
 
     @Transactional(readOnly = true)
     public List<CollectionResponse> getCollections(UUID userId, String status) {
@@ -47,6 +50,7 @@ public class CollectionService {
 
         long totalSteps = stepRepository.countByEventId(eventId);
         long completedSteps = stepCompletionRepository.countByUserIdAndStepEventId(userId, eventId);
+        RewardTemplate reward = rewardTemplateRepository.findByEventId(eventId).orElse(null);
 
         CollectionResponse.CollectionStatus collectionStatus;
         if (event.getStatus() == EventStatus.ENDED) {
@@ -67,6 +71,8 @@ public class CollectionService {
                 .heroImageUrl(event.getHeroImageUrl())
                 .themeColor(event.getThemeColor())
                 .partnerName(event.getPartnerName())
+                .rewardTitle(reward != null ? reward.getTitle() : null)
+                .rewardDescription(reward != null ? reward.getDescription() : null)
                 .startDate(event.getStartDate())
                 .endDate(event.getEndDate())
                 .joinedAt(ep.getJoinedAt())

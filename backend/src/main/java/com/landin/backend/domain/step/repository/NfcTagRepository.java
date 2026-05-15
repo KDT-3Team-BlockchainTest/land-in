@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface NfcTagRepository extends JpaRepository<NfcTag, UUID> {
     Optional<NfcTag> findByTagUid(String tagUid);
+    Optional<NfcTag> findByStepId(UUID stepId);
+    void deleteByStepId(UUID stepId);
 }
