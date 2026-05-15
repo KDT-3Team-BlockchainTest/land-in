@@ -6,9 +6,11 @@ import sparklesIcon from "../../../assets/icon/icon_sparkles.png";
 import EventTagBadge from "../EventTagBadge/EventTagBadge";
 import IconImage from "../IconImage/IconImage";
 import PlaceImage from "../PlaceImage/PlaceImage";
+import { useLanguage } from "../../../contexts/useLanguage";
 
 export default function ActiveEventCard({ event, onJoin }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const openDetail = () => {
     navigate(`/event/${event.id}`);
@@ -54,7 +56,7 @@ export default function ActiveEventCard({ event, onJoin }) {
 
         <span className="active-event-card__timer">
           <IconImage src={clockIcon} size={12} />
-          <span>{event.daysLeft}일 남음</span>
+          <span>{t("event.daysLeft", { days: event.daysLeft })}</span>
         </span>
 
         <span className="active-event-card__flag" aria-hidden="true">
@@ -69,8 +71,8 @@ export default function ActiveEventCard({ event, onJoin }) {
         </div>
 
         <div className="active-event-card__meta">
-          <span>📍 {event.landmarkCount}개 명소</span>
-          <span>🎁 리워드 1개</span>
+          <span>📍 {t("event.landmarkChip", { count: event.landmarkCount })}</span>
+          <span>🎁 {t("event.rewardChip")}</span>
         </div>
 
         <button
@@ -79,7 +81,7 @@ export default function ActiveEventCard({ event, onJoin }) {
           onClick={handleCtaClick}
         >
           {event.joined && <IconImage src={sparklesIcon} size={14} />}
-          <span>{event.joined ? "이어하기" : "루트 보기 & 참여하기"}</span>
+          <span>{event.joined ? t("event.continue") : t("event.joinAndView")}</span>
           <IconImage src={rightArrowIcon} size={14} />
         </button>
       </div>
