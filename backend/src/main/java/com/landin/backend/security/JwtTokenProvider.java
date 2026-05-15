@@ -1,5 +1,6 @@
 package com.landin.backend.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -15,6 +16,10 @@ import java.util.UUID;
 @Component
 public class JwtTokenProvider {
 
+    public static final String ROLE_USER = "USER";
+    public static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_CLAIM = "role";
+
     private final SecretKey key;
     private final long expiration;
 
@@ -26,10 +31,15 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(UUID userId) {
+        return generateToken(userId, ROLE_USER);
+    }
+
+    public String generateToken(UUID subjectId, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expiration);
         return Jwts.builder()
-                .subject(userId.toString())
+                .subject(Objects.requireNonNull(subjectId, "JWT subject id must not be null").toString())
+                .claim(ROLE_CLAIM, Objects.requireNonNullElse(role, ROLE_USER))
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
@@ -37,22 +47,29 @@ public class JwtTokenProvider {
     }
 
     public UUID getUserId(String token) {
-        String subject = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
-        return UUID.fromString(subject);
+        return UUID.fromString(parseClaims(token).getSubject());
+    }
+
+    public String getRole(String token) {
+        Object role = parseClaims(token).get(ROLE_CLAIM);
+        return role == null ? ROLE_USER : role.toString();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            parseClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             log.warn("Invalid JWT token: {}", e.getMessage());
             return false;
         }
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }
