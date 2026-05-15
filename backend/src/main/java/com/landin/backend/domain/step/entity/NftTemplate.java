@@ -33,4 +33,11 @@ public class NftTemplate {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    public void updateFromAdmin(String name, String imageUrl, NftRarity rarity, String description) {
+        this.name = name;
+        this.imageUrl = imageUrl;
+        this.rarity = rarity;
+        this.description = description;
+    }
 }

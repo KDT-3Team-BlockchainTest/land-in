@@ -5,7 +5,10 @@
 
 .nft-gallery-page__hero {
   position: relative;
+  width: 100%;
+  max-width: 420px;
   height: 244px;
+  margin: 0 auto;
   overflow: hidden;
 }
 

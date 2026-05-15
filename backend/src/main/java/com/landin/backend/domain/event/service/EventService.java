@@ -9,6 +9,8 @@ import com.landin.backend.domain.event.entity.Event;
 import com.landin.backend.domain.event.entity.EventStatus;
 import com.landin.backend.domain.event.repository.EventRepository;
 import com.landin.backend.domain.participation.repository.EventParticipationRepository;
+import com.landin.backend.domain.reward.entity.RewardTemplate;
+import com.landin.backend.domain.reward.repository.RewardTemplateRepository;
 import com.landin.backend.domain.step.entity.NftTemplate;
 import com.landin.backend.domain.step.entity.Step;
 import com.landin.backend.domain.step.repository.NftTemplateRepository;
@@ -30,6 +32,7 @@ public class EventService {
     private final NftTemplateRepository nftTemplateRepository;
     private final StepCompletionRepository stepCompletionRepository;
     private final EventParticipationRepository eventParticipationRepository;
+    private final RewardTemplateRepository rewardTemplateRepository;
 
     @Transactional(readOnly = true)
     public List<EventSummaryResponse> getEvents(String status) {
@@ -44,7 +47,15 @@ public class EventService {
         }
 
         return events.stream()
-                .map(e -> EventSummaryResponse.of(e, (int) stepRepository.countByEventId(e.getId())))
+                .map(e -> {
+                    RewardTemplate reward = rewardTemplateRepository.findByEventId(e.getId()).orElse(null);
+                    return EventSummaryResponse.of(
+                            e,
+                            (int) stepRepository.countByEventId(e.getId()),
+                            reward != null ? reward.getTitle() : null,
+                            reward != null ? reward.getDescription() : null
+                    );
+                })
                 .toList();
     }
 
@@ -63,7 +74,8 @@ public class EventService {
         List<StepResponse> stepResponses = buildStepResponses(steps, completedStepIds, joined);
         int completedCount = completedStepIds.size();
 
-        return EventDetailResponse.of(event, stepResponses, completedCount, joined);
+        RewardTemplate reward = rewardTemplateRepository.findByEventId(eventId).orElse(null);
+        return EventDetailResponse.of(event, stepResponses, completedCount, joined, reward);
     }
 
     private List<StepResponse> buildStepResponses(List<Step> steps, Set<UUID> completedStepIds, boolean joined) {
