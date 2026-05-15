@@ -77,14 +77,16 @@ function Start-LoggedProcess {
         }
     }
 
-    $process = Start-Process `
-        -FilePath $resolvedPath `
-        -ArgumentList $ArgumentList `
-        -WorkingDirectory $WorkingDirectory `
-        -RedirectStandardOutput $stdout `
-        -RedirectStandardError $stderr `
-        -WindowStyle Hidden `
-        -PassThru
+    $startParams = @{
+        FilePath             = $resolvedPath
+        ArgumentList         = $ArgumentList
+        WorkingDirectory     = $WorkingDirectory
+        RedirectStandardOutput = $stdout
+        RedirectStandardError  = $stderr
+        PassThru             = $true
+    }
+    if ($env:OS -eq "Windows_NT") { $startParams['WindowStyle'] = 'Hidden' }
+    $process = Start-Process @startParams
 
     Set-Content -Path (Join-Path $RuntimeDir "$Name.pid") -Value $process.Id
     Write-Host "Started $Name (PID $($process.Id)); logs: $stdout"
@@ -182,9 +184,16 @@ $env:SPRING_DATASOURCE_PASSWORD = if ($env:SPRING_DATASOURCE_PASSWORD) { $env:SP
 $env:APP_PUBLIC_BASE_URL = if ($env:APP_PUBLIC_BASE_URL) { $env:APP_PUBLIC_BASE_URL } else { "http://localhost:$BackendPort" }
 $env:PORT = "$BackendPort"
 
-$isWindows = ($env:OS -eq "Windows_NT")
-$gradleFile = if ($isWindows) { ".\gradlew.bat" } else { "./gradlew" }
-$npmFile = if ($isWindows) { "npm.cmd" } else { "npm" }
+$runningOnWindows = ($env:OS -eq "Windows_NT")
+$gradleFile = if ($runningOnWindows) { ".\gradlew.bat" } else { "./gradlew" }
+$npmFile = if ($runningOnWindows) { "npm.cmd" } else { "npm" }
+
+if (-not $runningOnWindows) {
+    $gradlewPath = Join-Path $Root "backend/gradlew"
+    if (Test-Path $gradlewPath) {
+        & chmod +x $gradlewPath | Out-Null
+    }
+}
 
 if (-not (Test-Port $BackendPort)) {
     Start-LoggedProcess `
