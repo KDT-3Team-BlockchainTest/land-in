@@ -1,32 +1,30 @@
 import "./RewardCouponCard.css";
+import { useLanguage } from "../../../contexts/useLanguage";
 
 function getStatusClassName(status) {
-  if (status === "used") {
-    return "reward-coupon-card--used";
-  }
-
-  if (status === "expired") {
-    return "reward-coupon-card--expired";
-  }
-
+  if (status === "used") return "reward-coupon-card--used";
+  if (status === "expired") return "reward-coupon-card--expired";
   return "reward-coupon-card--available";
 }
 
-function getStatusLabel(status) {
-  if (status === "used") {
-    return "사용 완료";
-  }
-
-  if (status === "expired") {
-    return "만료";
-  }
-
-  return "사용 가능";
-}
-
 export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
+  const { t } = useLanguage();
   const statusClassName = getStatusClassName(reward.status);
   const isAvailable = reward.status === "available";
+
+  const statusLabel =
+    reward.status === "used"
+      ? t("reward.statusUsed")
+      : reward.status === "expired"
+        ? t("reward.statusExpired")
+        : t("reward.statusAvailable");
+
+  const dateLabel =
+    reward.status === "available"
+      ? t("reward.validUntil")
+      : reward.status === "used"
+        ? t("reward.usedOn")
+        : t("reward.expiredOn");
 
   return (
     <article
@@ -42,7 +40,7 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
           <div className="reward-coupon-card__title-wrap">
             <div className="reward-coupon-card__title-row">
               <p className="reward-coupon-card__title">{reward.title}</p>
-              <span className="reward-coupon-card__status">{getStatusLabel(reward.status)}</span>
+              <span className="reward-coupon-card__status">{statusLabel}</span>
             </div>
             <p className="reward-coupon-card__collection">{reward.collectionName}</p>
           </div>
@@ -52,17 +50,11 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
 
         <div className="reward-coupon-card__meta">
           <div>
-            <p className="reward-coupon-card__meta-label">쿠폰 코드</p>
+            <p className="reward-coupon-card__meta-label">{t("reward.couponLabel")}</p>
             <p className="reward-coupon-card__meta-value">{reward.couponCode}</p>
           </div>
           <div>
-            <p className="reward-coupon-card__meta-label">
-              {reward.status === "available"
-                ? "유효 기간"
-                : reward.status === "used"
-                  ? "사용일"
-                  : "만료일"}
-            </p>
+            <p className="reward-coupon-card__meta-label">{dateLabel}</p>
             <p className="reward-coupon-card__meta-value">
               {reward.status === "available" ? reward.validUntil : reward.usedDate}
             </p>
@@ -71,7 +63,7 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
 
         <div className="reward-coupon-card__footer">
           <div>
-            <p className="reward-coupon-card__partner-label">제휴처</p>
+            <p className="reward-coupon-card__partner-label">{t("reward.partnerLabel")}</p>
             <p className="reward-coupon-card__partner-value">{reward.partner}</p>
           </div>
 
@@ -81,11 +73,11 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
               className="reward-coupon-card__action"
               onClick={() => onShowCode(reward)}
             >
-              QR 보기
+              {t("reward.qrView")}
             </button>
           ) : (
             <span className="reward-coupon-card__passive-action">
-              {reward.status === "used" ? "사용됨" : "종료됨"}
+              {reward.status === "used" ? t("reward.usedShort") : t("reward.endedShort")}
             </span>
           )}
         </div>

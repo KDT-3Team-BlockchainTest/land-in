@@ -1,5 +1,6 @@
 package com.landin.backend.config;
 
+import com.landin.backend.security.AdminDetailsServiceImpl;
 import com.landin.backend.security.JwtAuthenticationFilter;
 import com.landin.backend.security.JwtTokenProvider;
 import com.landin.backend.security.UserDetailsServiceImpl;
@@ -26,6 +27,7 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsServiceImpl userDetailsService;
+    private final AdminDetailsServiceImpl adminDetailsService;
     private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
@@ -37,13 +39,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/admin/auth/login").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/nfts/*/metadata").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/dashboard/stats").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
+                        new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, adminDetailsService),
                         UsernamePasswordAuthenticationFilter.class
                 );
 

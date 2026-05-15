@@ -1,49 +1,29 @@
 import "./EventTagBadge.css";
+import { useLanguage } from "../../../contexts/useLanguage";
 
 const tagConfig = {
-  featured: {
-    label: "추천",
-    icon: "★",
-    className: "event-tag-badge--featured",
-  },
-  hot: {
-    label: "인기",
-    icon: "●",
-    className: "event-tag-badge--hot",
-  },
-  new: {
-    label: "NEW",
-    icon: "＋",
-    className: "event-tag-badge--new",
-  },
-  ongoing: {
-    label: "진행 중",
-    icon: "●",
-    className: "event-tag-badge--ongoing",
-  },
-  completed: {
-    label: "완성",
-    icon: "✓",
-    className: "event-tag-badge--completed",
-  },
-  ended: {
-    label: "종료",
-    icon: "○",
-    className: "event-tag-badge--ended",
-  },
+  featured: { labelKey: "tags.featured", icon: "★", className: "event-tag-badge--featured" },
+  hot: { labelKey: "tags.hot", icon: "●", className: "event-tag-badge--hot" },
+  new: { labelKey: null, icon: "＋", className: "event-tag-badge--new", literalLabel: "NEW" },
+  ongoing: { labelKey: "tags.ongoing", icon: "●", className: "event-tag-badge--ongoing" },
+  completed: { labelKey: "tags.completed", icon: "✓", className: "event-tag-badge--completed" },
+  ended: { labelKey: "tags.ended", icon: "○", className: "event-tag-badge--ended" },
 };
 
 export default function EventTagBadge({ tag }) {
+  const { t } = useLanguage();
   const config = tagConfig[tag];
 
   if (!config) {
     return null;
   }
 
+  const label = config.labelKey ? t(config.labelKey) : config.literalLabel;
+
   return (
     <span className={`event-tag-badge ${config.className}`}>
       <span aria-hidden="true">{config.icon}</span>
-      <span>{config.label}</span>
+      <span>{label}</span>
     </span>
   );
 }
