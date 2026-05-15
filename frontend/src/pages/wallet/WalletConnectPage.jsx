@@ -78,7 +78,7 @@ export default function WalletConnectPage() {
     return false;
   }, [navigate, nextPath, updateUserProfile]);
 
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = useCallback(async () => {
     if (shouldUseMetaMaskMobileRedirect()) {
       setError("");
       setLoading(false);
@@ -104,7 +104,7 @@ export default function WalletConnectPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, nextPath, updateUserProfile]);
 
   useEffect(() => {
     if (!mobilePending || user?.walletAddress) {
@@ -152,7 +152,7 @@ export default function WalletConnectPage() {
 
     autoConnectAttemptedRef.current = true;
     handleConnectWallet();
-  }, [location.search, user?.walletAddress]);
+  }, [handleConnectWallet, location.search, user?.walletAddress]);
 
   return (
     <div className="wallet-connect-page">

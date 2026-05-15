@@ -1,12 +1,20 @@
 import "./ProfileAchievementCard.css";
+import { useLanguage } from "../../../contexts/useLanguage";
 
 export default function ProfileAchievementCard({ item, index = 0 }) {
+  const { t } = useLanguage();
   const isUnlocked = item.state === "unlocked";
   const isProgress = item.state === "progress";
   const isLocked = item.state === "locked";
   const progressPercent = item.progress
     ? Math.round((item.progress.current / item.progress.total) * 100)
     : 0;
+
+  const stateLabel = isUnlocked
+    ? t("achievement.unlocked")
+    : isProgress
+      ? t("achievement.progress")
+      : t("achievement.locked");
 
   return (
     <article
@@ -26,9 +34,7 @@ export default function ProfileAchievementCard({ item, index = 0 }) {
     >
       <div className="profile-achievement-card__header">
         <span className="profile-achievement-card__emoji">{item.emoji}</span>
-        <span className="profile-achievement-card__state">
-          {isUnlocked ? "완료" : isProgress ? "진행 중" : "잠김"}
-        </span>
+        <span className="profile-achievement-card__state">{stateLabel}</span>
       </div>
 
       <p className="profile-achievement-card__title">{item.title}</p>

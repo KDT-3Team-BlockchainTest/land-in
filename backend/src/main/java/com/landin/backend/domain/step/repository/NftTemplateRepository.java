@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface NftTemplateRepository extends JpaRepository<NftTemplate, UUID> {
     Optional<NftTemplate> findByStepId(UUID stepId);
+    void deleteByStepId(UUID stepId);
 }
