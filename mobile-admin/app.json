@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Land-in Admin",
+    "slug": "land-in-mobile-admin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": { "bundleIdentifier": "com.landin.admin" },
+    "android": { "package": "com.landin.admin" },
+    "scheme": "landindamin",
+    "extra": { "apiBaseUrl": "http://10.0.2.2:8080/api" }
+  }
+}

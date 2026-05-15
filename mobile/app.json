@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Land-in",
+    "slug": "land-in-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f7f5f3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.landin.mobile",
+      "infoPlist": {
+        "NFCReaderUsageDescription": "Land-in이 랜드마크 NFC 태그를 읽어 방문을 인증하고 NFT를 발행하기 위해 NFC를 사용합니다.",
+        "com.apple.developer.nfc.readersession.formats": ["NDEF"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#f7f5f3"
+      },
+      "package": "com.landin.mobile",
+      "permissions": ["android.permission.NFC"]
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
+    ],
+    "scheme": "landin",
+    "extra": {
+      "apiBaseUrl": "http://10.0.2.2:8080/api"
+    }
+  }
+}
