@@ -41,9 +41,14 @@ land-in/
 
 ```bash
 cd backend
+
+# Windows
+gradlew.bat bootRun
+
+# Mac / Linux
 ./gradlew bootRun
-# 기본 포트: 8080
 ```
+> 기본 포트: 8080
 
 > `backend/src/main/resources/application.yml` 에서 DB 설정 필요
 
