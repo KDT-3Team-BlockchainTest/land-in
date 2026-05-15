@@ -6,14 +6,12 @@ import EmptyState from "../../components/common/EmptyState/EmptyState";
 import RewardCodeModal from "../../components/common/RewardCodeModal/RewardCodeModal";
 import RewardCouponCard from "../../components/common/RewardCouponCard/RewardCouponCard";
 import StatSummaryGrid from "../../components/common/StatSummaryGrid/StatSummaryGrid";
+import { useLanguage } from "../../contexts/useLanguage";
 
-const rewardFilters = [
-  { id: "available", label: "사용 가능" },
-  { id: "used", label: "사용 완료" },
-  { id: "expired", label: "만료" },
-];
+const FILTER_IDS = ["available", "used", "expired"];
 
 export default function RewardsPage() {
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState("available");
   const [selectedReward, setSelectedReward] = useState(null);
   const [rawRewards, setRawRewards] = useState([]);
@@ -22,6 +20,11 @@ export default function RewardsPage() {
     rewardsApi.list().then((list) => setRawRewards(list ?? [])).catch(() => {});
   }, []);
 
+  const rewardFilters = useMemo(
+    () => FILTER_IDS.map((id) => ({ id, label: t(`rewards.filters.${id}`) })),
+    [t],
+  );
+
   const rewards = rawRewards.map(adaptReward);
   const filteredRewards = useMemo(
     () => rewards.filter((r) => r.status === activeFilter),
@@ -29,9 +32,9 @@ export default function RewardsPage() {
   );
 
   const stats = [
-    { label: "사용 가능", value: rewards.filter((r) => r.status === "available").length, color: "#fe6b70", backgroundColor: "rgba(254, 107, 112, 0.08)", icon: "🎁" },
-    { label: "사용 완료", value: rewards.filter((r) => r.status === "used").length, color: "#22c55e", backgroundColor: "rgba(34, 197, 94, 0.08)", icon: "✅" },
-    { label: "만료", value: rewards.filter((r) => r.status === "expired").length, color: "#9ca3af", backgroundColor: "#f3f4f6", icon: "⏰" },
+    { label: t("reward.summaryAvailable"), value: rewards.filter((r) => r.status === "available").length, color: "#fe6b70", backgroundColor: "rgba(254, 107, 112, 0.08)", icon: "🎁" },
+    { label: t("reward.summaryUsed"), value: rewards.filter((r) => r.status === "used").length, color: "#22c55e", backgroundColor: "rgba(34, 197, 94, 0.08)", icon: "✅" },
+    { label: t("reward.summaryExpired"), value: rewards.filter((r) => r.status === "expired").length, color: "#9ca3af", backgroundColor: "#f3f4f6", icon: "⏰" },
   ];
 
   const handleUseReward = async (reward) => {
@@ -48,13 +51,13 @@ export default function RewardsPage() {
       <div className="page-layout">
         <main className="page-layout__content">
           <section className="rewards-page__intro">
-            <h1 className="page-title rewards-page__title">내 리워드</h1>
-            <p className="page-subtitle">컬렉션 완성으로 받은 혜택과 배지를 한곳에서 확인하고 사용할 수 있어요.</p>
+            <h1 className="page-title rewards-page__title">{t("rewards.title")}</h1>
+            <p className="page-subtitle">{t("rewards.subtitle")}</p>
           </section>
 
           <StatSummaryGrid items={stats} />
 
-          <section className="rewards-page__filters" aria-label="리워드 필터">
+          <section className="rewards-page__filters" aria-label={t("rewards.filterTabsLabel")}>
             {rewardFilters.map((filter) => (
               <button
                 key={filter.id}
@@ -68,7 +71,11 @@ export default function RewardsPage() {
           </section>
 
           {filteredRewards.length === 0 ? (
-            <EmptyState icon="🎫" title="표시할 리워드가 없어요" description="다른 탭을 확인하거나 컬렉션을 완성해 새로운 보상을 받아보세요." />
+            <EmptyState
+              icon="🎫"
+              title={t("rewards.emptyTitle")}
+              description={t("rewards.emptyDescription")}
+            />
           ) : (
             <div className="rewards-page__list">
               {filteredRewards.map((reward, i) => (
