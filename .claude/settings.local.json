@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew compileJava)",
-      "Bash(./gradlew compileJava --info)"
+      "Bash(./gradlew compileJava --info)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
