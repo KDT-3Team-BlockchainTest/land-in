@@ -10,11 +10,13 @@ import EventRewardCard from "../../components/common/EventRewardCard/EventReward
 import EventRouteTimeline from "../../components/common/EventRouteTimeline/EventRouteTimeline";
 import GradientActionButton from "../../components/common/GradientActionButton/GradientActionButton";
 import useJoinedEventIds from "../../hooks/useJoinedEventIds";
+import { useLanguage } from "../../contexts/useLanguage";
 
 export default function EventDetailPage() {
   const navigate = useNavigate();
   const { eventId } = useParams();
   const { joinEvent } = useJoinedEventIds();
+  const { t } = useLanguage();
   const [raw, setRaw] = useState(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -57,11 +59,15 @@ export default function EventDetailPage() {
   const isJoined = raw.joined;
   const isJoinable = event.participationState === 'joinable';
   const hasCurrentStep = event.routeSteps.some((s) => s.stepState === 'current');
-  const statusLabel = isJoined ? '참여 중' : (isJoinable ? '참여 가능' : event.detailStatusLabel);
+  const statusLabel = isJoined
+    ? t('event.participationJoined')
+    : isJoinable
+      ? t('event.participationJoinable')
+      : event.detailStatusLabel;
 
   let actionLabel = event.bottomCtaLabel;
-  if (isJoinable && !isJoined) actionLabel = '루트 보기 & 참여하기';
-  else if (hasCurrentStep) actionLabel = '태그';
+  if (isJoinable && !isJoined) actionLabel = t('event.joinAndView');
+  else if (hasCurrentStep) actionLabel = t('nav.tag');
 
   const handleBottomAction = async () => {
     if (isJoinable && !isJoined) {
