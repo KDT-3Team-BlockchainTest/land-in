@@ -8,15 +8,16 @@ import ProfileAchievementCard from "../../components/common/ProfileAchievementCa
 import ProfileMenuCard from "../../components/common/ProfileMenuCard/ProfileMenuCard";
 import { getAchievementItems, settingsItems } from "../../data/profile";
 import { useAuth } from "../../contexts/useAuth";
+import { useLanguage } from "../../contexts/useLanguage";
 import { disconnectWalletSession, formatWalletAddress, HOODI_CHAIN_ID } from "../../utils/wallet";
 
-function travelStats(profileSummary) {
+function buildTravelStats(profileSummary, t) {
   return [
     {
       id: "landmarks",
       emoji: "LM",
-      label: "Landmarks",
-      description: "Verified landmark visits",
+      label: t("mypage.travel.landmarks"),
+      description: t("mypage.travel.landmarksDesc"),
       value: profileSummary.landmarkCount ?? 0,
       unit: "",
       color: "#fe6b70",
@@ -25,8 +26,8 @@ function travelStats(profileSummary) {
     {
       id: "countries",
       emoji: "CT",
-      label: "Countries",
-      description: "Countries explored through collections",
+      label: t("mypage.travel.countries"),
+      description: t("mypage.travel.countriesDesc"),
       value: profileSummary.countryCount ?? 0,
       unit: "",
       color: "#8b5cf6",
@@ -35,8 +36,8 @@ function travelStats(profileSummary) {
     {
       id: "distance",
       emoji: "KM",
-      label: "Distance",
-      description: "Estimated from your route activity",
+      label: t("mypage.travel.distance"),
+      description: t("mypage.travel.distanceDesc"),
       value: profileSummary.totalDistanceLabel ?? "0 km",
       unit: "",
       color: "#06b6d4",
@@ -57,6 +58,7 @@ const defaultProfile = {
 export default function MyPage() {
   const navigate = useNavigate();
   const { user, logout, updateUserProfile } = useAuth();
+  const { t } = useLanguage();
   const [profileSummary, setProfileSummary] = useState(defaultProfile);
   const [walletLoading, setWalletLoading] = useState(false);
 
@@ -91,9 +93,7 @@ export default function MyPage() {
   };
 
   const handleWalletDisconnect = async () => {
-    const shouldDisconnect = window.confirm(
-      "Disconnect the currently linked wallet? You can reconnect the same wallet or a different wallet later.",
-    );
+    const shouldDisconnect = window.confirm(t("mypage.wallet.disconnectConfirm"));
 
     if (!shouldDisconnect) {
       return;
@@ -105,17 +105,19 @@ export default function MyPage() {
       updateUserProfile(profile);
       await disconnectWalletSession().catch(() => {});
     } catch (error) {
-      window.alert(error.message || "Failed to disconnect the wallet.");
+      window.alert(error.message || t("mypage.wallet.disconnectError"));
     } finally {
       setWalletLoading(false);
     }
   };
 
+  const travelStats = buildTravelStats(profileSummary, t);
+
   return (
     <div className="page-layout">
       <main className="page-layout__content">
         <section className="my-page__intro">
-          <h1 className="page-title">My Page</h1>
+          <h1 className="page-title">{t("mypage.title")}</h1>
         </section>
 
         <section className="my-page__profile-card">
@@ -127,20 +129,20 @@ export default function MyPage() {
               </div>
               <div className="my-page__identity">
                 <div>
-                  <p className="my-page__name">{user?.displayName ?? "Land-in User"}</p>
+                  <p className="my-page__name">{user?.displayName ?? t("mypage.defaultName")}</p>
                   <p className="my-page__handle">{user?.email ?? ""}</p>
                 </div>
-                <span className="my-page__level">City Explorer</span>
+                <span className="my-page__level">{t("mypage.level")}</span>
               </div>
             </div>
             <div className="my-page__profile-stats">
               <article className="my-page__mini-stat is-coral">
                 <p className="my-page__mini-value">{profileSummary.nftCount}</p>
-                <p className="my-page__mini-label">Owned NFTs</p>
+                <p className="my-page__mini-label">{t("mypage.ownedNfts")}</p>
               </article>
               <article className="my-page__mini-stat is-violet">
                 <p className="my-page__mini-value">{profileSummary.cityCount}</p>
-                <p className="my-page__mini-label">Visited Cities</p>
+                <p className="my-page__mini-label">{t("mypage.visitedCities")}</p>
               </article>
             </div>
           </div>
@@ -149,26 +151,23 @@ export default function MyPage() {
         <section className="my-page__wallet-card">
           <div className="my-page__section-head">
             <div>
-              <p className="my-page__section-title">Wallet Connection</p>
-              <p className="my-page__section-description">
-                Link your Hoodi testnet wallet to prepare for future on-chain minting and manage which wallet this
-                account uses.
-              </p>
+              <p className="my-page__section-title">{t("mypage.wallet.title")}</p>
+              <p className="my-page__section-description">{t("mypage.wallet.description")}</p>
             </div>
             <span className={`my-page__wallet-badge ${user?.walletAddress ? "is-connected" : "is-pending"}`}>
-              {user?.walletAddress ? "Connected" : "Not linked"}
+              {user?.walletAddress ? t("mypage.wallet.connected") : t("mypage.wallet.notLinked")}
             </span>
           </div>
           <div className="my-page__wallet-body">
             <div>
-              <p className="my-page__wallet-label">Current wallet</p>
+              <p className="my-page__wallet-label">{t("mypage.wallet.currentLabel")}</p>
               <strong className="my-page__wallet-value">
-                {user?.walletAddress ? formatWalletAddress(user.walletAddress) : "No wallet connected yet"}
+                {user?.walletAddress ? formatWalletAddress(user.walletAddress) : t("mypage.wallet.noWallet")}
               </strong>
               <p className="my-page__wallet-meta">
                 {user?.walletAddress
-                  ? `Hoodi Testnet - Chain ID ${user.walletChainId ?? HOODI_CHAIN_ID}`
-                  : "You can skip wallet onboarding for now, but future Web3 features will require a linked wallet."}
+                  ? t("mypage.wallet.chainInfo", { chainId: user.walletChainId ?? HOODI_CHAIN_ID })
+                  : t("mypage.wallet.skipNotice")}
               </p>
             </div>
             <div className="my-page__wallet-actions">
@@ -178,7 +177,7 @@ export default function MyPage() {
                 onClick={handleWalletConnect}
                 disabled={walletLoading}
               >
-                {user?.walletAddress ? "Reconnect Wallet" : "Connect Wallet"}
+                {user?.walletAddress ? t("mypage.wallet.reconnect") : t("mypage.wallet.connect")}
               </button>
               {user?.walletAddress ? (
                 <button
@@ -187,7 +186,7 @@ export default function MyPage() {
                   onClick={handleWalletDisconnect}
                   disabled={walletLoading}
                 >
-                  {walletLoading ? "Disconnecting..." : "Disconnect"}
+                  {walletLoading ? t("mypage.wallet.disconnecting") : t("mypage.wallet.disconnect")}
                 </button>
               ) : null}
             </div>
@@ -197,13 +196,13 @@ export default function MyPage() {
         <section className="my-page__travel-card">
           <div className="my-page__section-head">
             <div>
-              <p className="my-page__section-title">Travel Stats</p>
-              <p className="my-page__section-description">A quick summary of your travel activity across Land-in.</p>
+              <p className="my-page__section-title">{t("mypage.travel.title")}</p>
+              <p className="my-page__section-description">{t("mypage.travel.description")}</p>
             </div>
             <span className="my-page__year-badge">2026</span>
           </div>
           <div className="my-page__travel-list">
-            {travelStats(profileSummary).map((item) => (
+            {travelStats.map((item) => (
               <article key={item.id} className="my-page__travel-item">
                 <div
                   className="my-page__travel-icon"
@@ -230,9 +229,12 @@ export default function MyPage() {
         <section className="my-page__achievement-section">
           <div className="my-page__section-head">
             <div>
-              <p className="my-page__section-title">Achievements</p>
+              <p className="my-page__section-title">{t("mypage.achievements.title")}</p>
               <p className="my-page__section-description">
-                {unlockedCount} / {achievements.length} unlocked
+                {t("mypage.achievements.unlockedRatio", {
+                  unlocked: unlockedCount,
+                  total: achievements.length,
+                })}
               </p>
             </div>
             <div className="my-page__achievement-progress">
@@ -252,17 +254,17 @@ export default function MyPage() {
         <section className="my-page__menu-section">
           <div className="my-page__section-head">
             <div>
-              <p className="my-page__section-title">Settings</p>
-              <p className="my-page__section-description">Review app options, preferences, and account-related items.</p>
+              <p className="my-page__section-title">{t("mypage.settings.title")}</p>
+              <p className="my-page__section-description">{t("mypage.settings.description")}</p>
             </div>
           </div>
           <ProfileMenuCard items={settingsItems} />
         </section>
 
         <button type="button" className="my-page__logout" onClick={handleLogout}>
-          Log Out
+          {t("mypage.logout")}
         </button>
-        <p className="my-page__footer">land-in v1.0.0</p>
+        <p className="my-page__footer">{t("mypage.version")}</p>
       </main>
     </div>
   );

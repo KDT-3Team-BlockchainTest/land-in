@@ -15,6 +15,8 @@ public class UserNftResponse {
     private UUID id;
     private String eventId;
     private String eventTitle;
+    private String stepPlaceName;
+    private String stepImageUrl;
     private String name;
     private String imageUrl;
     private NftRarity rarity;
@@ -33,6 +35,8 @@ public class UserNftResponse {
                 .id(nft.getId())
                 .eventId(nft.getEvent().getId())
                 .eventTitle(nft.getEvent().getTitle())
+                .stepPlaceName(nft.getStep().getPlaceName())
+                .stepImageUrl(nft.getStep().getImageUrl())
                 .name(nft.getName())
                 .imageUrl(nft.getImageUrl())
                 .rarity(nft.getRarity())

@@ -2,24 +2,30 @@ import "./EventDetailHero.css";
 import clockIconW from "../../../assets/icon/icon_clock_w.png";
 import IconImage from "../IconImage/IconImage";
 import PlaceImage from "../PlaceImage/PlaceImage";
+import { useLanguage } from "../../../contexts/useLanguage";
 
-function getMetaLabel(event) {
+function useMetaLabel(event) {
+  const { t } = useLanguage();
+
   if (event.heroDayLabel) {
     return event.heroDayLabel;
   }
 
   if (typeof event.daysLeft === "number") {
-    return `${event.daysLeft}일 남음`;
+    return t("event.daysLeft", { days: event.daysLeft });
   }
 
   if (typeof event.daysUntilOpen === "number") {
-    return `${event.daysUntilOpen}일 후 오픈`;
+    return t("event.daysUntilOpen", { days: event.daysUntilOpen });
   }
 
-  return "상세 보기";
+  return t("event.detailFallback");
 }
 
 export default function EventDetailHero({ event, statusLabel }) {
+  const { t } = useLanguage();
+  const metaLabel = useMetaLabel(event);
+
   return (
     <section className="event-detail-hero">
       <PlaceImage
@@ -40,10 +46,12 @@ export default function EventDetailHero({ event, statusLabel }) {
 
         <div className="event-detail-hero__chips">
           <span className="event-detail-hero__chip">{event.period}</span>
-          <span className="event-detail-hero__chip">{event.landmarkCount}개 명소</span>
+          <span className="event-detail-hero__chip">
+            {t("event.landmarkChip", { count: event.landmarkCount })}
+          </span>
           <span className="event-detail-hero__chip event-detail-hero__chip--accent">
             <IconImage src={clockIconW} size={12} />
-            <span>{getMetaLabel(event)}</span>
+            <span>{metaLabel}</span>
           </span>
         </div>
       </div>

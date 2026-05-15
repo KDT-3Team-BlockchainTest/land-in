@@ -11,10 +11,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserNftRepository extends JpaRepository<UserNft, UUID> {
-    @EntityGraph(attributePaths = {"event"})
+    @EntityGraph(attributePaths = {"event", "step"})
     List<UserNft> findByUserId(UUID userId);
 
-    @EntityGraph(attributePaths = {"event"})
+    @EntityGraph(attributePaths = {"event", "step"})
     List<UserNft> findByUserIdAndEventId(UUID userId, String eventId);
 
     @EntityGraph(attributePaths = {"user", "event", "step", "nftTemplate"})
