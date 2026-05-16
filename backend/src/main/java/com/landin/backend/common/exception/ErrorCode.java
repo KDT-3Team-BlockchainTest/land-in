@@ -27,6 +27,13 @@ public enum ErrorCode {
 
     // NFT
     NFT_NOT_FOUND(HttpStatus.NOT_FOUND, "NFT를 찾을 수 없습니다."),
+    PHOTO_DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "사진 초안을 찾을 수 없습니다."),
+    DRAFT_NOT_READY_FOR_IPFS(HttpStatus.BAD_REQUEST, "IPFS 업로드 가능한 상태가 아닙니다."),
+    DUPLICATE_NFT_MINT(HttpStatus.CONFLICT, "이미 민팅 요청이 존재하는 사진 초안입니다."),
+    NFT_MINT_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "NFT 민팅 요청을 찾을 수 없습니다."),
+    MINT_NOT_READY_FOR_REWARD(HttpStatus.BAD_REQUEST, "포인트 지급 가능한 민팅 상태가 아닙니다."),
+    FABRIC_REWARD_FAILED(HttpStatus.BAD_GATEWAY, "Fabric 포인트 지급에 실패했습니다."),
+    FABRIC_NFT_RECORD_FAILED(HttpStatus.BAD_GATEWAY, "Fabric NFT 기록에 실패했습니다."),
 
     // Reward
     REWARD_NOT_FOUND(HttpStatus.NOT_FOUND, "리워드를 찾을 수 없습니다."),
