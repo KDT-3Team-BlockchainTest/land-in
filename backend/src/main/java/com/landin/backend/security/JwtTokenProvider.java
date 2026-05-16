@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -48,6 +49,10 @@ public class JwtTokenProvider {
 
     public UUID getUserId(String token) {
         return UUID.fromString(parseClaims(token).getSubject());
+    }
+
+    public UUID getUserIdFromUserDetails(UserDetails userDetails) {
+        return UUID.fromString(userDetails.getUsername());
     }
 
     public String getRole(String token) {
