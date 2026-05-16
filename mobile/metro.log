@@ -1,0 +1,13 @@
+env: load .env
+env: export EXPO_PUBLIC_API_BASE_URL
+Starting project at C:\Users\라솜\bu-dev\land_in_test\mobile
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Android .\App.jsx ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 1789ms App.jsx (1076 modules)
+ ERROR  [Invariant Violation: "main" has not been registered. This can happen if:
+* Metro (the local dev server) is run from the wrong folder. Check if Metro is running, stop it and restart it in the current project.
+* A module failed to load due to an error and `AppRegistry.registerComponent` wasn't called.]
+ WARN  The app is running using the Legacy Architecture. The Legacy Architecture is deprecated and will be removed in a future version of React Native. Please consider migrating to the New Architecture. For more information, please see https://reactnative.dev/blog/2024/10/23/the-new-architecture-is-here
+^C
