@@ -151,15 +151,17 @@ EXPO_PUBLIC_API_BASE_URL=https://xxxx.loca.lt/api
 ```bash
 # 같은 Wi-Fi
 npx expo start --clear
+(한 번 하고 나서 --clear 없이 입력)
 
 # 네트워크가 다를 때
 npx expo start --clear --tunnel
+(한 번 하고 나서 --clear 없이 입력)
 ```
 
 QR 코드를 **Expo Go** 앱으로 스캔합니다.
 
 ### 빌드 (실기기 APK)
-
+## 이미 업로드 되어 있음. 안해도 됨.
 ```bash
 npm install -g eas-cli
 eas login
