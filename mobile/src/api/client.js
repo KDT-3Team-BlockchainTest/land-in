@@ -6,6 +6,9 @@ const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080
 const http = axios.create({ baseURL: BASE_URL });
 
 http.interceptors.request.use(async (config) => {
+  // localtunnel 스플래시 페이지 우회
+  config.headers['Bypass-Tunnel-Reminder'] = '1';
+
   if (config.auth !== false) {
     const token = await getToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;

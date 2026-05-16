@@ -6,7 +6,18 @@
       "Bash(sleep 5 && cat /c/Users/라솜/AppData/Local/Temp/claude/C--Users----bu-dev-land-in--claude-worktrees-vibrant-hypatia-8b400b/ccebd8b5-e6a1-49f4-8db8-43b12142c841/tasks/bwldy7lax.output 2>&1 | tail -20)",
       "Bash(npx expo *)",
       "Bash(echo \"exit:$?\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(Get-ChildItem -Path C:\\\\Users\\\\라솜\\\\bu-dev\\\\land_in_test -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(ipconfig)",
+      "Bash(netsh advfirewall *)",
+      "Bash(ngrok version *)",
+      "Bash(npx ngrok *)",
+      "Bash(curl -s http://localhost:4040/api/tunnels)",
+      "Bash(curl -s http://localhost:4041/api/tunnels)",
+      "Bash(npx localtunnel *)",
+      "Bash(jobs -l)"
     ]
   }
 }
