@@ -1,17 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert, Animated, Image, Linking, Platform,
+  Animated, Image, Linking, Platform,
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NfcManager, { NfcTech } from 'react-native-nfc-manager';
 import { nfcApi } from '../api/nfc';
 import { collectionsApi } from '../api/collections';
-import NftTipCard from '../components/tag/NftTipCard';
 import TagCampaignCard from '../components/tag/TagCampaignCard';
 import SectionHeader from '../components/common/SectionHeader';
 import { colors, radius, typography } from '../theme';
+
+let NfcManager = null;
+let NfcTech = null;
+try {
+  const nfc = require('react-native-nfc-manager');
+  NfcManager = nfc.default;
+  NfcTech = nfc.NfcTech;
+} catch {}
 
 const PHASE = { READY: 'ready', SCANNING: 'scanning', VERIFYING: 'verifying', MINTING: 'minting', MINTED: 'minted', ERROR: 'error' };
 const MINT_STATUS = { MINTED_ONCHAIN: 'MINTED_ONCHAIN', PENDING_ONCHAIN: 'PENDING_ONCHAIN', PENDING_WALLET: 'PENDING_WALLET' };
@@ -27,6 +33,11 @@ export default function TagScreen({ navigation }) {
   const pollTimer = useRef(null);
 
   useEffect(() => {
+    if (!NfcManager) {
+      setNfcSupported(false);
+      collectionsApi.list('ongoing').then(setCampaigns).catch(() => {});
+      return;
+    }
     NfcManager.isSupported().then((ok) => {
       setNfcSupported(ok);
       if (ok) NfcManager.start().catch(() => {});
@@ -91,7 +102,7 @@ export default function TagScreen({ navigation }) {
   }, []);
 
   const startScan = useCallback(async () => {
-    if (scanning.current) return;
+    if (!NfcManager || scanning.current) return;
     scanning.current = true;
     setPhase(PHASE.SCANNING);
     try {
@@ -133,7 +144,6 @@ export default function TagScreen({ navigation }) {
         <View style={styles.container}>
           <Text style={styles.pageTitle}>NFC 스캔</Text>
 
-          {/* 스캔 영역 */}
           <View style={styles.scanCard}>
             {phase === PHASE.READY && (
               <>
@@ -150,7 +160,7 @@ export default function TagScreen({ navigation }) {
                 {nfcSupported === false && (
                   <View style={styles.noNfcBox}>
                     <Ionicons name="warning-outline" size={20} color={colors.warning} />
-                    <Text style={styles.noNfcText}>이 기기는 NFC를 지원하지 않습니다</Text>
+                    <Text style={styles.noNfcText}>Expo Go에서는 NFC를 지원하지 않습니다{'\n'}실제 빌드 앱에서 사용해주세요</Text>
                   </View>
                 )}
               </>
@@ -164,7 +174,13 @@ export default function TagScreen({ navigation }) {
                 <Text style={styles.scanningText}>
                   {phase === PHASE.SCANNING ? 'NFC 태그를 기다리는 중...' : '인증 확인 중...'}
                 </Text>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => { NfcManager.cancelTechnologyRequest().catch(() => {}); setPhase(PHASE.READY); }}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => {
+                    NfcManager?.cancelTechnologyRequest().catch(() => {});
+                    setPhase(PHASE.READY);
+                  }}
+                >
                   <Text style={styles.cancelText}>취소</Text>
                 </TouchableOpacity>
               </View>
@@ -218,15 +234,13 @@ export default function TagScreen({ navigation }) {
             )}
           </View>
 
-          {/* iOS 안내 */}
-          {Platform.OS === 'ios' && phase === PHASE.READY && (
+          {Platform.OS === 'ios' && phase === PHASE.READY && nfcSupported && (
             <View style={styles.iosGuide}>
               <Ionicons name="information-circle-outline" size={16} color={colors.gray500} />
               <Text style={styles.iosGuideText}>iPhone은 위쪽 카메라 부근을 태그에 가까이 대주세요</Text>
             </View>
           )}
 
-          {/* 진행중 캠페인 */}
           {campaigns.length > 0 && phase === PHASE.READY && (
             <View style={styles.campaigns}>
               <SectionHeader title="참여중인 캠페인" action="컬렉션 보기" onAction={() => navigation.navigate('Collection')} />
@@ -255,8 +269,8 @@ const styles = StyleSheet.create({
   scanHint: { ...typography.body, textAlign: 'center', lineHeight: 22, color: colors.gray500, marginBottom: 24 },
   scanBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primary, borderRadius: radius.xl, paddingHorizontal: 32, paddingVertical: 14 },
   scanBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  noNfcBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: radius.md, padding: 12 },
-  noNfcText: { fontSize: 13, color: colors.warning, fontWeight: '600' },
+  noNfcBox: { alignItems: 'center', gap: 8, backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: radius.md, padding: 16 },
+  noNfcText: { fontSize: 13, color: colors.warning, fontWeight: '600', textAlign: 'center', lineHeight: 20 },
   scanningWrap: { alignItems: 'center', gap: 16 },
   scanRing: {
     width: 140, height: 140, borderRadius: 70,
