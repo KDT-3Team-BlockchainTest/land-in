@@ -6,14 +6,9 @@ import { collectionsApi } from '../api/collections';
 import PlaceImage from '../components/common/PlaceImage';
 import ProgressBar from '../components/common/ProgressBar';
 import EmptyState from '../components/common/EmptyState';
+import AppHeader from '../components/layout/AppHeader';
+import { useLanguage } from '../contexts/useLanguage';
 import { colors, radius, shadow, typography } from '../theme';
-
-const FILTERS = [
-  { label: '전체', value: 'all' },
-  { label: '진행 중', value: 'ongoing' },
-  { label: '완성', value: 'completed' },
-  { label: '종료', value: 'ended' },
-];
 
 function CollectionCard({ item, onPress }) {
   return (
@@ -45,17 +40,31 @@ function CollectionCard({ item, onPress }) {
 }
 
 export default function CollectionScreen({ navigation }) {
+  const { t } = useLanguage();
+  const FILTERS = [
+    { label: t('collection.filters.all'), value: 'all' },
+    { label: t('collection.filters.ongoing'), value: 'ongoing' },
+    { label: t('collection.filters.completed'), value: 'completed' },
+    { label: t('collection.filters.ended'), value: 'ended' },
+  ];
   const [filter, setFilter] = useState('all');
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const load = useCallback(async (f) => {
+    setError(null);
     try {
       const data = await collectionsApi.list(f);
       setCollections(data || []);
-    } catch { setCollections([]); }
-    finally { setLoading(false); setRefreshing(false); }
+    } catch (err) {
+      setCollections([]);
+      setError(err?.message || '불러오기에 실패했습니다.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
   useEffect(() => { load(filter); }, [filter, load]);
@@ -64,7 +73,8 @@ export default function CollectionScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Text style={styles.pageTitle}>내 컬렉션</Text>
+      <AppHeader />
+      <Text style={styles.pageTitle}>{t('collection.title')}</Text>
       <View style={styles.filterRow}>
         {FILTERS.map((f) => (
           <TouchableOpacity
@@ -79,18 +89,28 @@ export default function CollectionScreen({ navigation }) {
 
       {loading
         ? <ActivityIndicator style={{ marginTop: 60 }} size="large" color={colors.primary} />
-        : (
-          <FlatList
-            data={collections}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => (
-              <CollectionCard item={item} onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} />
-            )}
-            contentContainerStyle={styles.list}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-            ListEmptyComponent={<EmptyState icon="albums-outline" title="컬렉션이 없습니다" subtitle="이벤트에 참여하여 스탬프를 모아보세요" />}
-          />
-        )
+        : error
+          ? (
+            <View style={styles.errorWrap}>
+              <Ionicons name="wifi-outline" size={40} color={colors.gray300} />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(filter); }}>
+                <Text style={styles.retryText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          )
+          : (
+            <FlatList
+              data={collections}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={({ item }) => (
+                <CollectionCard item={item} onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} />
+              )}
+              contentContainerStyle={styles.list}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+              ListEmptyComponent={<EmptyState icon="albums-outline" title={t('collection.emptyCollectionTitle')} subtitle={t('collection.emptyCollectionDescription')} />}
+            />
+          )
       }
     </SafeAreaView>
   );
@@ -117,4 +137,8 @@ const styles = StyleSheet.create({
   progressLabel: { fontSize: 11, color: colors.gray500, fontWeight: '600', flexShrink: 0 },
   rewardRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   rewardText: { fontSize: 12, color: colors.gray500, flex: 1 },
+  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  errorText: { fontSize: 14, color: colors.gray500, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.primary, paddingHorizontal: 24, paddingVertical: 10 },
+  retryText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
 });
