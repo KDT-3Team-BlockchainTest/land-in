@@ -9,6 +9,8 @@ import { nfcApi } from '../api/nfc';
 import { collectionsApi } from '../api/collections';
 import TagCampaignCard from '../components/tag/TagCampaignCard';
 import SectionHeader from '../components/common/SectionHeader';
+import AppHeader from '../components/layout/AppHeader';
+import { useLanguage } from '../contexts/useLanguage';
 import { colors, radius, typography } from '../theme';
 
 let NfcManager = null;
@@ -23,10 +25,12 @@ const PHASE = { READY: 'ready', SCANNING: 'scanning', VERIFYING: 'verifying', MI
 const MINT_STATUS = { MINTED_ONCHAIN: 'MINTED_ONCHAIN', PENDING_ONCHAIN: 'PENDING_ONCHAIN', PENDING_WALLET: 'PENDING_WALLET' };
 
 export default function TagScreen({ navigation }) {
+  const { t } = useLanguage();
   const [phase, setPhase] = useState(PHASE.READY);
   const [nfcSupported, setNfcSupported] = useState(null);
   const [mintedNft, setMintedNft] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [scannedUid, setScannedUid] = useState('');
   const [campaigns, setCampaigns] = useState([]);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanning = useRef(false);
@@ -110,6 +114,7 @@ export default function TagScreen({ navigation }) {
       const tag = await NfcManager.getTag();
       const uid = parseTagUid(tag);
       if (!uid) throw new Error('NFC 태그 UID를 읽지 못했습니다.');
+      setScannedUid(uid);
       await verifyTag(uid);
     } catch (err) {
       const msg = err?.message || '';
@@ -140,9 +145,10 @@ export default function TagScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <AppHeader />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
-          <Text style={styles.pageTitle}>NFC 스캔</Text>
+          <Text style={styles.pageTitle}>{t('tag.title')}</Text>
 
           <View style={styles.scanCard}>
             {phase === PHASE.READY && (
@@ -150,17 +156,17 @@ export default function TagScreen({ navigation }) {
                 <View style={styles.nfcIconWrap}>
                   <Ionicons name="wifi-outline" size={56} color={colors.gray300} style={{ transform: [{ rotate: '90deg' }] }} />
                 </View>
-                <Text style={styles.scanHint}>현장의 NFC 태그에 폰을 가져다 대면{'\n'}자동으로 인식됩니다</Text>
+                <Text style={styles.scanHint}>{t('tag.scanHint')}</Text>
                 {nfcSupported && (
                   <TouchableOpacity style={styles.scanBtn} onPress={startScan} activeOpacity={0.85}>
                     <Ionicons name="scan-outline" size={20} color="#fff" />
-                    <Text style={styles.scanBtnText}>스캔 시작</Text>
+                    <Text style={styles.scanBtnText}>{t('tag.startScan')}</Text>
                   </TouchableOpacity>
                 )}
                 {nfcSupported === false && (
                   <View style={styles.noNfcBox}>
                     <Ionicons name="warning-outline" size={20} color={colors.warning} />
-                    <Text style={styles.noNfcText}>Expo Go에서는 NFC를 지원하지 않습니다{'\n'}실제 빌드 앱에서 사용해주세요</Text>
+                    <Text style={styles.noNfcText}>{t('tag.noNfc')}</Text>
                   </View>
                 )}
               </>
@@ -172,7 +178,7 @@ export default function TagScreen({ navigation }) {
                   <Ionicons name="phone-portrait-outline" size={48} color={colors.primary} />
                 </Animated.View>
                 <Text style={styles.scanningText}>
-                  {phase === PHASE.SCANNING ? 'NFC 태그를 기다리는 중...' : '인증 확인 중...'}
+                  {phase === PHASE.SCANNING ? t('tag.scanning') : t('tag.verifying')}
                 </Text>
                 <TouchableOpacity
                   style={styles.cancelBtn}
@@ -181,7 +187,7 @@ export default function TagScreen({ navigation }) {
                     setPhase(PHASE.READY);
                   }}
                 >
-                  <Text style={styles.cancelText}>취소</Text>
+                  <Text style={styles.cancelText}>{t('tag.cancel')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -189,15 +195,15 @@ export default function TagScreen({ navigation }) {
             {phase === PHASE.MINTING && (
               <View style={styles.scanningWrap}>
                 <Ionicons name="diamond-outline" size={56} color={colors.violet} />
-                <Text style={styles.scanningText}>NFT 발행 중...</Text>
-                <Text style={styles.mintingSubtext}>블록체인에 기록하고 있습니다. 잠시만 기다려주세요.</Text>
+                <Text style={styles.scanningText}>{t('tag.minting')}</Text>
+                <Text style={styles.mintingSubtext}>{t('tag.mintingDesc')}</Text>
               </View>
             )}
 
             {phase === PHASE.MINTED && mintedNft && (
               <View style={styles.mintedWrap}>
                 <Ionicons name="checkmark-circle" size={52} color={colors.success} style={{ marginBottom: 8 }} />
-                <Text style={styles.mintedTitle}>인증 완료!</Text>
+                <Text style={styles.mintedTitle}>{t('tag.mintedTitle')}</Text>
                 {mintedNft.imageUrl && (
                   <Image source={{ uri: mintedNft.imageUrl }} style={styles.nftImage} />
                 )}
@@ -213,11 +219,11 @@ export default function TagScreen({ navigation }) {
                     onPress={() => Linking.openURL(`https://holesky.etherscan.io/tx/${mintedNft.transactionHash}`)}
                   >
                     <Ionicons name="open-outline" size={13} color={colors.violet} />
-                    <Text style={styles.txLinkText}>블록체인에서 확인</Text>
+                    <Text style={styles.txLinkText}>{t('tag.viewOnChain')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity style={styles.resetBtn} onPress={reset}>
-                  <Text style={styles.resetBtnText}>다시 스캔하기</Text>
+                  <Text style={styles.resetBtnText}>{t('tag.scanAgain')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -225,10 +231,17 @@ export default function TagScreen({ navigation }) {
             {phase === PHASE.ERROR && (
               <View style={styles.errorWrap}>
                 <Ionicons name="close-circle" size={52} color={colors.primary} style={{ marginBottom: 8 }} />
-                <Text style={styles.errorTitle}>인증 실패</Text>
+                <Text style={styles.errorTitle}>{t('tag.errorTitle')}</Text>
                 <Text style={styles.errorMsg}>{errorMsg}</Text>
+                {scannedUid ? (
+                  <View style={styles.uidBox}>
+                    <Text style={styles.uidLabel}>{t('tag.scannedUidLabel')}</Text>
+                    <Text style={styles.uidValue}>{scannedUid}</Text>
+                    <Text style={styles.uidHint}>{t('tag.uidHint')}</Text>
+                  </View>
+                ) : null}
                 <TouchableOpacity style={styles.resetBtn} onPress={reset}>
-                  <Text style={styles.resetBtnText}>다시 시도하기</Text>
+                  <Text style={styles.resetBtnText}>{t('tag.tryAgain')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -237,13 +250,13 @@ export default function TagScreen({ navigation }) {
           {Platform.OS === 'ios' && phase === PHASE.READY && nfcSupported && (
             <View style={styles.iosGuide}>
               <Ionicons name="information-circle-outline" size={16} color={colors.gray500} />
-              <Text style={styles.iosGuideText}>iPhone은 위쪽 카메라 부근을 태그에 가까이 대주세요</Text>
+              <Text style={styles.iosGuideText}>{t('tag.iosGuide')}</Text>
             </View>
           )}
 
           {campaigns.length > 0 && phase === PHASE.READY && (
             <View style={styles.campaigns}>
-              <SectionHeader title="참여중인 캠페인" action="컬렉션 보기" onAction={() => navigation.navigate('Collection')} />
+              <SectionHeader title={t('tag.campaignsTitle')} action={t('tag.viewCollection')} onAction={() => navigation.navigate('Collection')} />
               {campaigns.slice(0, 3).map((ev) => (
                 <TagCampaignCard key={ev.id} event={ev} onPress={() => navigation.navigate('EventDetail', { eventId: ev.id })} />
               ))}
@@ -291,9 +304,13 @@ const styles = StyleSheet.create({
   txLinkText: { fontSize: 12, color: colors.violet, fontWeight: '600', textDecorationLine: 'underline' },
   resetBtn: { marginTop: 8, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.primary, paddingHorizontal: 28, paddingVertical: 10 },
   resetBtnText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  errorWrap: { alignItems: 'center', gap: 10 },
+  errorWrap: { alignItems: 'center', gap: 10, width: '100%' },
   errorTitle: { fontSize: 20, fontWeight: '800', color: colors.primary },
   errorMsg: { ...typography.body, textAlign: 'center', color: colors.gray600 },
+  uidBox: { width: '100%', backgroundColor: colors.gray100, borderRadius: radius.md, padding: 12, gap: 4 },
+  uidLabel: { fontSize: 11, fontWeight: '700', color: colors.gray500 },
+  uidValue: { fontSize: 13, fontWeight: '800', color: colors.gray900, fontFamily: 'monospace' },
+  uidHint: { fontSize: 11, color: colors.gray400, lineHeight: 16 },
   iosGuide: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.gray100, borderRadius: radius.sm, padding: 12, marginBottom: 24 },
   iosGuideText: { flex: 1, fontSize: 12, color: colors.gray500, lineHeight: 16 },
   campaigns: { marginTop: 8 },
