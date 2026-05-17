@@ -1,0 +1,20 @@
+package com.landin.backend.domain.nft.entity;
+
+/** NFT 민팅 요청 상태 (기획서 8.3 NFT Mint 상태 전이표) */
+public enum NftMintRequestStatus {
+    NOT_STARTED,
+    WALLET_REQUIRED,
+    WALLET_CONNECTED,
+    POLYGON_MINT_REQUESTED,
+    POLYGON_MINT_PENDING,
+    POLYGON_MINTED,
+    POLYGON_MINT_FAILED,
+    FABRIC_RECORD_PENDING,
+    FABRIC_RECORDED,
+    FABRIC_RECORD_FAILED,
+    MINTED_BUT_FABRIC_RECORD_FAILED,
+    REWARD_PENDING,
+    REWARD_GRANTED,
+    REWARD_FAILED_AFTER_MINT,
+    MINT_COMPLETED
+}

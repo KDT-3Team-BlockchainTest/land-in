@@ -2,6 +2,7 @@ package com.landin.backend.domain.nfc.service;
 
 import com.landin.backend.common.exception.BusinessException;
 import com.landin.backend.common.exception.ErrorCode;
+import com.landin.backend.domain.blockchain.fabric.FabricVisitGateway;
 import com.landin.backend.domain.event.entity.Event;
 import com.landin.backend.domain.event.entity.EventStatus;
 import com.landin.backend.domain.nfc.dto.NfcVerifyRequest;
@@ -36,7 +37,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,6 +52,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class NfcService {
+
+    private static final DateTimeFormatter RFC3339 = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private final NfcTagRepository nfcTagRepository;
     private final StepRepository stepRepository;
@@ -58,6 +66,7 @@ public class NfcService {
     private final NfcScanLogRepository nfcScanLogRepository;
     private final UserRepository userRepository;
     private final OnChainNftMintService onChainNftMintService;
+    private final FabricVisitGateway fabricVisitGateway;
 
     @Transactional
     public NfcVerifyResponse verify(UUID userId, NfcVerifyRequest request) {
@@ -119,6 +128,8 @@ public class NfcService {
                 "Step completion must not be null"
         );
         Objects.requireNonNull(stepCompletionRepository.save(completion), "Saved step completion must not be null");
+
+        recordVisitOnFabric(userId, tagUid, event, step, completion);
 
         NftTemplate template = nftTemplateRepository.findByStepId(step.getId())
                 .orElseThrow(() -> new IllegalStateException("NFT template is missing. stepId=" + step.getId()));
@@ -202,6 +213,32 @@ public class NfcService {
 
     private String generateCouponCode() {
         return "LI-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+    private void recordVisitOnFabric(UUID userId, String tagUid, Event event, Step step, StepCompletion completion) {
+        try {
+            String visitId = completion.getId().toString();
+            String userIdHash = sha256Hex(userId.toString());
+            String tagIdHash = sha256Hex(tagUid);
+            String visitProofHash = sha256Hex(userId + ":" + tagUid + ":" + visitId);
+            String visitedAt = completion.getCompletedAt().atOffset(ZoneOffset.UTC).format(RFC3339);
+            String locationCode = step.getPlaceName();
+            fabricVisitGateway.verifyVisit(visitId, userIdHash, event.getId(), tagIdHash, visitProofHash, visitedAt, locationCode);
+        } catch (Exception e) {
+            log.warn("[NfcService] Fabric VerifyVisit failed — continuing without Fabric record. userId={} error={}", userId, e.getMessage());
+        }
+    }
+
+    private String sha256Hex(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
     }
 
     private String normalizeTagUid(String rawTagValue) {
