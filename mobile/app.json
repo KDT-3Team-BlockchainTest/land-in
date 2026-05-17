@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Land In",
+    "slug": "land-in",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.landin.app",
+      "infoPlist": {
+        "NFCReaderUsageDescription": "NFC 태그를 스캔하여 방문을 인증하고 NFT를 받을 수 있습니다.",
+        "com.apple.developer.nfc.readersession.formats": [
+          "NDEF",
+          "TAG"
+        ]
+      },
+      "entitlements": {
+        "com.apple.developer.nfc.readersession.formats": [
+          "NDEF",
+          "TAG"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.landin.app",
+      "permissions": [
+        "android.permission.NFC"
+      ]
+    },
+    "plugins": [
+      "react-native-nfc-manager",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "be24291d-07bb-46c6-b1ec-bc9cebe0288e"
+      }
+    },
+    "owner": "dltmdrb210"
+  }
+}
