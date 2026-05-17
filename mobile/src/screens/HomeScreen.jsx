@@ -63,7 +63,7 @@ export default function HomeScreen({ navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
         <ActivityIndicator style={{ marginTop: 80 }} size="large" color={colors.primary} />
       </SafeAreaView>
     );
@@ -72,7 +72,7 @@ export default function HomeScreen({ navigation }) {
   const featuredEvent = featured[0] || active[0];
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <AppHeader />
       <ScrollView
         showsVerticalScrollIndicator={false}

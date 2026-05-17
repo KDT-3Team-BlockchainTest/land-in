@@ -144,7 +144,7 @@ export default function TagScreen({ navigation }) {
   }[mintedNft?.rarity?.toLowerCase()] || colors.primary;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <AppHeader />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
