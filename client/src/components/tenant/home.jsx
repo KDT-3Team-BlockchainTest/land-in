@@ -1,6 +1,10 @@
 import { useState } from "react";
-import VacancyModal from "../shared/modal/vacancyModal";
+import VacancyModal from "../../shared/header/modal/vacancyModal";
 import "./home.css";
+
+const WISHLIST_KEY = "wishlist";
+const getStored = () => { try { return JSON.parse(localStorage.getItem(WISHLIST_KEY) || "[]"); } catch { return []; } };
+const saveStored = (list) => localStorage.setItem(WISHLIST_KEY, JSON.stringify(list));
 
 const MOCK_VACANCIES = [
   { id: 1, name: "강남 프리미엄 리테일 공간", address: "서울시 강남구 테헤란로 123", area: "33㎡", rent: "300만/월", deposit: "3,000만", verified: true, hot: true, lat: 37.498, lng: 127.028, color: "#e8d5b7" },
@@ -22,6 +26,14 @@ const RECOMMENDED = MOCK_VACANCIES.filter((v) => !v.hot);
 
 export default function Home() {
   const [selected, setSelected] = useState(null);
+  const [wishlist, setWishlist] = useState(getStored);
+
+  const toggleWishlist = (vacancy) => {
+    const exists = wishlist.some((v) => v.id === vacancy.id);
+    const next = exists ? wishlist.filter((v) => v.id !== vacancy.id) : [...wishlist, vacancy];
+    setWishlist(next);
+    saveStored(next);
+  };
 
   return (
     <div className="home">
@@ -105,7 +117,12 @@ export default function Home() {
         </div>
       </div>
 
-      <VacancyModal data={selected} onClose={() => setSelected(null)} />
+      <VacancyModal
+        data={selected}
+        onClose={() => setSelected(null)}
+        isWishlisted={selected ? wishlist.some((v) => v.id === selected.id) : false}
+        onToggleWishlist={selected ? () => toggleWishlist(selected) : undefined}
+      />
     </div>
   );
 }

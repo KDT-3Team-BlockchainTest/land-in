@@ -1,27 +1,16 @@
 import { useState } from "react";
-import VacancyModal from "../shared/modal/vacancyModal";
-import ConfirmModal from "../shared/modal/confirmModal";
+import VacancyModal from "../../shared/header/modal/vacancyModal";
+import ConfirmModal from "../../shared/header/modal/confirmModal";
 import "./wishlist.css";
 
-const INITIAL_SAVED = [
-  { id: 1, name: "강남역 1층 상가", area: "33㎡", rent: "150만/월", deposit: "1,000만" },
-  { id: 2, name: "홍대입구 팝업 공간", area: "20㎡", rent: "80만/월", deposit: "500만" },
-  { id: 3, name: "성수동 카페거리 2층", area: "45㎡", rent: "200만/월", deposit: "2,000만" },
-  { id: 4, name: "이태원 메인로드 1층", area: "28㎡", rent: "120만/월", deposit: "800만" },
-  { id: 5, name: "연남동 골목 소형매장", area: "15㎡", rent: "60만/월", deposit: "300만" },
-  { id: 6, name: "을지로 빈티지샵 자리", area: "22㎡", rent: "90만/월", deposit: "600만" },
-  { id: 7, name: "망원동 브런치카페", area: "40㎡", rent: "180만/월", deposit: "1,500만" },
-  { id: 8, name: "합정역 지하1층", area: "50㎡", rent: "100만/월", deposit: "700만" },
-  { id: 9, name: "잠실 롯데타워 근처", area: "35㎡", rent: "250만/월", deposit: "3,000만" },
-  { id: 10, name: "신촌 대학가 매장", area: "18㎡", rent: "70만/월", deposit: "400만" },
-  { id: 11, name: "압구정 로데오거리", area: "30㎡", rent: "300만/월", deposit: "5,000만" },
-  { id: 12, name: "건대입구 먹자골목", area: "25㎡", rent: "110만/월", deposit: "900만" },
-];
+const WISHLIST_KEY = "wishlist";
+const getStored = () => { try { return JSON.parse(localStorage.getItem(WISHLIST_KEY) || "[]"); } catch { return []; } };
+const saveStored = (list) => localStorage.setItem(WISHLIST_KEY, JSON.stringify(list));
 
 const PER_PAGE = 8;
 
 export default function Wishlist() {
-  const [savedList, setSavedList] = useState(INITIAL_SAVED);
+  const [savedList, setSavedList] = useState(getStored);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
@@ -48,12 +37,21 @@ export default function Wishlist() {
   const confirmUnlike = () => {
     const newList = savedList.filter((v) => v.id !== unlikeTarget.id);
     setSavedList(newList);
+    saveStored(newList);
     setUnlikeTarget(null);
     const newFiltered = search.trim()
       ? newList.filter((v) => v.name.includes(search.trim()))
       : newList;
     const newTotalPages = Math.ceil(newFiltered.length / PER_PAGE);
     if (page > newTotalPages && newTotalPages > 0) setPage(newTotalPages);
+  };
+
+  const handleModalUnlike = () => {
+    if (!selected) return;
+    const newList = savedList.filter((v) => v.id !== selected.id);
+    setSavedList(newList);
+    saveStored(newList);
+    setSelected(null);
   };
 
   return (
@@ -108,7 +106,12 @@ export default function Wishlist() {
         </div>
       )}
 
-      <VacancyModal data={selected} onClose={() => setSelected(null)} />
+      <VacancyModal
+        data={selected}
+        onClose={() => setSelected(null)}
+        isWishlisted={true}
+        onToggleWishlist={handleModalUnlike}
+      />
       <ConfirmModal
         message={unlikeTarget ? "찜 해제하시겠습니까?" : null}
         onConfirm={confirmUnlike}

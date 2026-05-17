@@ -154,6 +154,38 @@
   box-shadow: 0 0 0 3px rgba(74, 124, 255, 0.1);
 }
 
+.profile-card--guest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border-color: var(--gray-200);
+  text-align: center;
+}
+
+.guest-msg {
+  font-size: 14px;
+  color: var(--gray-400);
+  font-weight: 600;
+}
+
+.guest-login-btn {
+  padding: 10px 28px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+
+.guest-login-btn:hover {
+  background: var(--primary-dark);
+}
+
 .placeholder-card {
   background: var(--white);
   border-radius: var(--radius);
@@ -170,6 +202,10 @@
   color: var(--gray-300);
   font-size: 18px;
   font-weight: 600;
+}
+
+.placeholder-card--guest p {
+  color: var(--gray-400);
 }
 
 @media (max-width: 700px) {

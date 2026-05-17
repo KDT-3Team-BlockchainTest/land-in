@@ -1,0 +1,130 @@
+.nav-bar {
+  position: sticky;
+  top: 0;
+  height: 72px;
+  min-width: 900px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-logo-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--primary-light);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-logo-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dark);
+  line-height: 1.2;
+}
+
+.nav-logo-sub {
+  font-size: 12px;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+
+.nav-links {
+  display: flex;
+  gap: 6px;
+}
+
+.nav-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.nav-pill:hover {
+  color: var(--dark);
+  background: var(--gray-100);
+}
+
+.nav-pill.active {
+  color: var(--white);
+  background: var(--dark);
+}
+
+.nav-pill.active svg {
+  stroke: var(--white);
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-username {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.nav-login {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 50px;
+  background: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.nav-login:hover {
+  background: var(--primary-dark);
+}
+
+.nav-logout {
+  padding: 8px 18px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 50px;
+  background: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-logout:hover {
+  border-color: var(--gray-300);
+  color: var(--dark);
+}
