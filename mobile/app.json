@@ -35,8 +35,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "08510e16-e36a-4fef-ba5e-076649c3d6b2"
+        "projectId": "be24291d-07bb-46c6-b1ec-bc9cebe0288e"
       }
-    }
+    },
+    "owner": "dltmdrb210"
   }
 }

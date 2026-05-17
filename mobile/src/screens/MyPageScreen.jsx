@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { dashboardApi } from '../api/dashboard';
 import { useAuth } from '../auth/useAuth';
 import StatSummaryGrid from '../components/common/StatSummaryGrid';
+import AppHeader from '../components/layout/AppHeader';
+import { useLanguage } from '../contexts/useLanguage';
 import { colors, radius, shadow, typography } from '../theme';
 
 function MenuItem({ icon, label, value, onPress, chevron = true }) {
@@ -22,6 +24,7 @@ function MenuItem({ icon, label, value, onPress, chevron = true }) {
 
 export default function MyPageScreen({ navigation }) {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -29,9 +32,9 @@ export default function MyPageScreen({ navigation }) {
   }, []);
 
   function handleLogout() {
-    Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      { text: '로그아웃', style: 'destructive', onPress: logout },
+    Alert.alert(t('mypageExtra.logoutTitle'), t('mypageExtra.logoutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('mypage.logout'), style: 'destructive', onPress: logout },
     ]);
   }
 
@@ -42,6 +45,7 @@ export default function MyPageScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <AppHeader />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
         {/* 프로필 카드 */}
         <View style={styles.profileCard}>
@@ -49,21 +53,21 @@ export default function MyPageScreen({ navigation }) {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.displayName}>{user?.displayName || '사용자'}</Text>
+            <Text style={styles.displayName}>{user?.displayName || t('mypage.defaultName')}</Text>
             <Text style={styles.email}>{user?.email}</Text>
             <View style={styles.levelBadge}>
-              <Text style={styles.levelText}>City Explorer</Text>
+              <Text style={styles.levelText}>{t('mypage.level')}</Text>
             </View>
           </View>
           <View style={styles.miniStats}>
             <View style={styles.miniStat}>
               <Text style={[styles.miniStatVal, { color: colors.primary }]}>{nftCount}</Text>
-              <Text style={styles.miniStatLabel}>NFT</Text>
+              <Text style={styles.miniStatLabel}>{t('mypage.ownedNfts')}</Text>
             </View>
             <View style={[styles.miniStatDivider]} />
             <View style={styles.miniStat}>
               <Text style={[styles.miniStatVal, { color: colors.violet }]}>{cityCount}</Text>
-              <Text style={styles.miniStatLabel}>도시</Text>
+              <Text style={styles.miniStatLabel}>{t('mypage.visitedCities')}</Text>
             </View>
           </View>
         </View>
@@ -78,13 +82,13 @@ export default function MyPageScreen({ navigation }) {
           <View style={{ flex: 1 }}>
             {user?.walletAddress ? (
               <>
-                <Text style={[styles.walletLabel, { color: colors.violet }]}>연결된 지갑</Text>
+                <Text style={[styles.walletLabel, { color: colors.violet }]}>{t('mypage.wallet.connected')}</Text>
                 <Text style={styles.walletAddr}>
                   {user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}
                 </Text>
               </>
             ) : (
-              <Text style={styles.walletEmpty}>지갑 연결하기 →</Text>
+              <Text style={styles.walletEmpty}>{t('mypageExtra.walletConnect')}</Text>
             )}
           </View>
           {user?.walletAddress && <View style={styles.connectedDot} />}
@@ -93,16 +97,16 @@ export default function MyPageScreen({ navigation }) {
         {/* 여행 통계 */}
         {stats && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>나의 여행 기록</Text>
+            <Text style={styles.sectionTitle}>{t('mypage.travel.title')}</Text>
             <StatSummaryGrid stats={[
-              { label: '랜드마크', value: stats.landmarkCount, color: colors.primary },
-              { label: '국가', value: stats.countryCount, color: colors.violet },
-              { label: '완성 컬렉션', value: stats.completedCollectionCount, color: colors.success },
+              { label: t('mypage.travel.landmarks'), value: stats.landmarkCount, color: colors.primary, backgroundColor: colors.primarySoft },
+              { label: t('mypage.travel.countries'), value: stats.countryCount, color: colors.violet, backgroundColor: 'rgba(139,92,246,0.08)' },
+              { label: t('mypageExtra.collections'), value: stats.completedCollectionCount, color: colors.success, backgroundColor: colors.successSoft },
             ]} />
             {stats.totalDistanceLabel && (
               <View style={styles.distanceRow}>
                 <Ionicons name="walk-outline" size={14} color={colors.gray500} />
-                <Text style={styles.distanceText}>총 이동 거리 약 {stats.totalDistanceLabel}</Text>
+                <Text style={styles.distanceText}>{t('mypageExtra.totalDistance', { label: stats.totalDistanceLabel })}</Text>
               </View>
             )}
           </View>
@@ -110,26 +114,26 @@ export default function MyPageScreen({ navigation }) {
 
         {/* 메뉴 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정</Text>
+          <Text style={styles.sectionTitle}>{t('mypageExtra.accountSection')}</Text>
           <View style={styles.menuGroup}>
-            <MenuItem icon="person-outline" label="프로필 정보" onPress={() => {}} />
-            <MenuItem icon="stats-chart-outline" label="내 진행 현황" onPress={() => navigation.navigate('MyProgress')} />
-            <MenuItem icon="notifications-outline" label="알림 설정" onPress={() => {}} />
+            <MenuItem icon="person-outline" label={t('mypageExtra.profileInfo')} onPress={() => {}} />
+            <MenuItem icon="stats-chart-outline" label={t('nav.progress')} onPress={() => navigation.navigate('MyProgress')} />
+            <MenuItem icon="notifications-outline" label={t('mypageExtra.notifications')} onPress={() => {}} />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>앱 정보</Text>
+          <Text style={styles.sectionTitle}>{t('mypageExtra.appInfoSection')}</Text>
           <View style={styles.menuGroup}>
-            <MenuItem icon="information-circle-outline" label="서비스 소개" onPress={() => {}} />
-            <MenuItem icon="shield-checkmark-outline" label="개인정보처리방침" onPress={() => {}} />
-            <MenuItem icon="document-text-outline" label="이용약관" onPress={() => {}} />
+            <MenuItem icon="information-circle-outline" label={t('mypageExtra.serviceIntro')} onPress={() => {}} />
+            <MenuItem icon="shield-checkmark-outline" label={t('mypageExtra.privacyPolicy')} onPress={() => {}} />
+            <MenuItem icon="document-text-outline" label={t('mypageExtra.termsOfService')} onPress={() => {}} />
           </View>
         </View>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={18} color={colors.primary} />
-          <Text style={styles.logoutText}>로그아웃</Text>
+          <Text style={styles.logoutText}>{t('mypage.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

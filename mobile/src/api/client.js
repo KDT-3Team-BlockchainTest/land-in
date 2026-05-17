@@ -3,14 +3,17 @@ import { getToken } from '../auth/storage';
 
 const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '');
 
-const http = axios.create({ baseURL: BASE_URL });
+const http = axios.create({ baseURL: BASE_URL, timeout: 10000 });
 
 http.interceptors.request.use(async (config) => {
-  // localtunnel 스플래시 페이지 우회
   config.headers['Bypass-Tunnel-Reminder'] = '1';
 
   if (config.auth !== false) {
-    const token = await getToken();
+    // SecureStore가 무한 대기하지 않도록 3초 타임아웃
+    const token = await Promise.race([
+      getToken(),
+      new Promise((resolve) => setTimeout(() => resolve(null), 3000)),
+    ]);
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
