@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import EventTagBadge from '../common/EventTagBadge';
 import PlaceImage from '../common/PlaceImage';
 import { colors, radius, shadow } from '../../theme';
 
@@ -16,9 +17,7 @@ export default function FeaturedEventCard({ event, onPress }) {
       {/* 상단 칩들 */}
       <View style={styles.top}>
         <View style={styles.chips}>
-          <View style={styles.featuredBadge}>
-            <Text style={styles.featuredText}>✨ 추천</Text>
-          </View>
+          <EventTagBadge tag={event.tag || 'featured'} />
           <View style={styles.regionChip}>
             <Text style={styles.regionText}>{event.flag} {event.region}</Text>
           </View>
