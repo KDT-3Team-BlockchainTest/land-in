@@ -1,0 +1,9 @@
+backend/
+frontend/
+frontend-admin/
+contracts/
+docs/
+scripts/
+node_modules/
+.gradle/
+*.lock

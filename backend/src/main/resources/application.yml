@@ -36,6 +36,17 @@ app:
   cors:
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000}
 
+fabric:
+  enabled: ${FABRIC_ENABLED:false}
+  channel-name: ${FABRIC_CHANNEL_NAME:channel1}
+  chaincode-name: ${FABRIC_CHAINCODE_NAME:visitledger}
+  msp-id: ${FABRIC_MSP_ID:Org1MSP}
+  peer-endpoint: ${FABRIC_PEER_ENDPOINT:localhost:7051}
+  tls-cert-path: ${FABRIC_TLS_CERT_PATH:}
+  user-cert-path: ${FABRIC_USER_CERT_PATH:}
+  user-key-path: ${FABRIC_USER_KEY_PATH:}
+  deadline-seconds: ${FABRIC_DEADLINE_SECONDS:30}
+
 blockchain:
   enabled: ${BLOCKCHAIN_ENABLED:false}
   chain-id: ${BLOCKCHAIN_CHAIN_ID:560048}
