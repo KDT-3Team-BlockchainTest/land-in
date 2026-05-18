@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import RequireAuth from "./components/auth/RequireAuth";
 import Login from "./pages/login_all/Login";
 import Join from "./pages/login_all/Join";
+import OAuthCallback from "./pages/login_all/OAuthCallback";
 import CollectionPage from "./pages/collection/CollectionPage";
 import EventDetailPage from "./pages/event/EventDetailPage";
 import HomePage from "./pages/home/Home";
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
   {
     path: "/join",
     element: <Join />,
+  },
+  {
+    path: "/oauth/callback",
+    element: <OAuthCallback />,
   },
   {
     path: "/",

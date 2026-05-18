@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/useAuth";
+import { authApi } from "../../api/auth";
 import { NEXT_PATH_QUERY, readNextPath } from "../../utils/navigation";
 import "./Login.css";
 
@@ -37,6 +38,19 @@ export default function Login() {
     } catch (err) {
       setError(err.message || "Failed to sign in.");
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthLogin = async (provider) => {
+    setError("");
+    setLoading(true);
+    try {
+      const redirectUri = `${window.location.origin}/oauth/callback`;
+      const result = await authApi.oauthAuthorize(provider, redirectUri, nextPath);
+      window.location.href = result.authorizationUrl;
+    } catch (err) {
+      setError(err.message || "간편 로그인을 시작하지 못했습니다.");
       setLoading(false);
     }
   };
@@ -114,13 +128,13 @@ export default function Login() {
         <div className="divider">or</div>
 
         <div className="social-login-group">
-          <button type="button" className="social-btn google">
+          <button type="button" className="social-btn google" onClick={() => handleOAuthLogin("google")} disabled={loading}>
             Continue with Google
           </button>
           <button type="button" className="social-btn apple">
             Continue with Apple
           </button>
-          <button type="button" className="social-btn kakao">
+          <button type="button" className="social-btn kakao" onClick={() => handleOAuthLogin("kakao")} disabled={loading}>
             Continue with Kakao
           </button>
         </div>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { authApi } from '../api/auth';
 import { getToken, getStoredUser, removeToken, removeStoredUser, setToken, setStoredUser } from './storage';
 import { AuthContext } from './AuthContext';
@@ -15,6 +15,27 @@ function normalize(data) {
     walletProvider: data.walletProvider ?? null,
     walletConnectedAt: data.walletConnectedAt ?? null,
   };
+}
+
+function readOAuthSessionFromUrl() {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('oauth_token');
+  const rawUser = params.get('oauth_user');
+  if (!token || !rawUser) return null;
+
+  try {
+    const user = normalize(JSON.parse(rawUser));
+    params.delete('oauth_token');
+    params.delete('oauth_user');
+    params.delete('next');
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', nextUrl);
+    return { token, user };
+  } catch {
+    return null;
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -67,6 +88,15 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     (async () => {
+      const oauthSession = readOAuthSessionFromUrl();
+      if (oauthSession) {
+        await setToken(oauthSession.token);
+        await setStoredUser(oauthSession.user);
+        setUser(oauthSession.user);
+        setLoading(false);
+        return;
+      }
+
       const stored = await getStoredUser();
       const token = await getToken();
       if (stored && token) setUser(stored);

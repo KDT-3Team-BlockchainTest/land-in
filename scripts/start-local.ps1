@@ -14,6 +14,29 @@ $RuntimeDir = Join-Path $Root ".landin-runtime"
 $LogDir = Join-Path $RuntimeDir "logs"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
+function Import-DotEnv {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) { return }
+
+    Get-Content $Path | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith("#") -or -not $line.Contains("=")) { return }
+
+        $key, $value = $line.Split("=", 2)
+        $key = $key.Trim()
+        $value = $value.Trim()
+
+        if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+
+        if ($key) {
+            [Environment]::SetEnvironmentVariable($key, $value, "Process")
+        }
+    }
+}
+
 function Test-Command {
     param([string]$Name)
     $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
@@ -134,6 +157,8 @@ function Ensure-JavaOnPath {
 Write-Host "Land-In local stack startup"
 Write-Host "Workspace: $Root"
 
+Import-DotEnv (Join-Path $Root ".env")
+
 Ensure-JavaOnPath
 Ensure-Tool "java" "Install Java 21 and make sure java is on PATH (or set JAVA_HOME)."
 Ensure-Tool "node" "Install Node.js 20+ and make sure node is on PATH."
@@ -226,7 +251,7 @@ if (-not (Test-Port $AdminPort)) {
 }
 
 Write-Host "Waiting for services..."
-$backendReady = Wait-Http "http://127.0.0.1:$BackendPort/api/admin/auth/me" 120
+$backendReady = Wait-Http "http://127.0.0.1:$BackendPort/api/events" 300
 $frontendReady = Wait-Http "http://127.0.0.1:$FrontendPort/" 60
 $adminReady = Wait-Http "http://127.0.0.1:$AdminPort/" 60
 
@@ -240,4 +265,3 @@ Write-Host "Logs            : $LogDir"
 Write-Host ""
 Write-Host "Ready flags     : backend=$backendReady frontend=$frontendReady admin=$adminReady"
 Write-Host "Stop processes manually with the PID files in $RuntimeDir, or close them from Task Manager."
-

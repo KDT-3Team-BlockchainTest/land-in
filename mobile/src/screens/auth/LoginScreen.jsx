@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  KeyboardAvoidingView, Platform, ScrollView, StyleSheet,
+  KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import { authApi } from '../../api/auth';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../auth/useAuth';
 import { colors, radius } from '../../theme';
@@ -27,6 +28,24 @@ export default function LoginScreen({ navigation }) {
     } catch (err) {
       setError(err.message || 'Failed to sign in.');
     } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleOAuthLogin(provider) {
+    setError('');
+    setLoading(true);
+    try {
+      if (Platform.OS !== 'web' || typeof window === 'undefined') {
+        setError('PC 웹 미리보기에서 먼저 간편 로그인을 확인해 주세요.');
+        setLoading(false);
+        return;
+      }
+      const redirectUri = `${window.location.origin}/`;
+      const result = await authApi.oauthAuthorize(provider, redirectUri, '/');
+      await Linking.openURL(result.authorizationUrl);
+    } catch (err) {
+      setError(err.message || '간편 로그인을 시작하지 못했습니다.');
       setLoading(false);
     }
   }
@@ -108,13 +127,13 @@ export default function LoginScreen({ navigation }) {
 
             {/* 소셜 로그인 */}
             <View style={styles.socialGroup}>
-              <TouchableOpacity style={styles.socialBtn}>
+              <TouchableOpacity style={styles.socialBtn} onPress={() => handleOAuthLogin('google')} disabled={loading}>
                 <Text style={styles.socialBtnText}>Continue with Google</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.socialBtn}>
                 <Text style={styles.socialBtnText}>Continue with Apple</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.socialBtn, styles.kakaoBtn]}>
+              <TouchableOpacity style={[styles.socialBtn, styles.kakaoBtn]} onPress={() => handleOAuthLogin('kakao')} disabled={loading}>
                 <Text style={styles.socialBtnText}>Continue with Kakao</Text>
               </TouchableOpacity>
             </View>
