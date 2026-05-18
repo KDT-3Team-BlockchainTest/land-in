@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { nfcApi } from '../api/nfc';
+import { nftsApi } from '../api/nfts';
 import { collectionsApi } from '../api/collections';
 import TagCampaignCard from '../components/tag/TagCampaignCard';
 import SectionHeader from '../components/common/SectionHeader';
@@ -30,7 +31,6 @@ export default function TagScreen({ navigation }) {
   const [nfcSupported, setNfcSupported] = useState(null);
   const [mintedNft, setMintedNft] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const [scannedUid, setScannedUid] = useState('');
   const [campaigns, setCampaigns] = useState([]);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanning = useRef(false);
@@ -107,9 +107,11 @@ export default function TagScreen({ navigation }) {
     try {
       const result = await nfcApi.verify(verifyParams);
       if (!result) throw new Error('서버 응답이 없습니다.');
-      setMintedNft(result);
+      const nft = result.mintedNft;
+      if (!nft) throw new Error('NFT 정보를 받지 못했습니다.');
+      setMintedNft(nft);
 
-      if (result.mintStatus === MINT_STATUS.PENDING_ONCHAIN) {
+      if (nft.mintStatus === MINT_STATUS.PENDING_ONCHAIN) {
         setPhase(PHASE.MINTING);
         let attempts = 0;
         pollTimer.current = setInterval(async () => {
@@ -120,11 +122,14 @@ export default function TagScreen({ navigation }) {
             return;
           }
           try {
-            // 폴링은 상태 조회 전용 — 재스캔 없이 NFT ID로 조회
-            const updated = await nfcApi.verify(verifyParams);
+            const updated = await nftsApi.getById(nft.id);
             if (updated?.mintStatus !== MINT_STATUS.PENDING_ONCHAIN) {
               clearInterval(pollTimer.current);
-              setMintedNft(updated);
+              setMintedNft((prev) => ({
+                ...prev,
+                mintStatus: updated.mintStatus,
+                transactionHash: updated.transactionHash,
+              }));
               setPhase(PHASE.MINTED);
             }
           } catch { /* keep polling */ }
@@ -147,8 +152,6 @@ export default function TagScreen({ navigation }) {
       const tag = await NfcManager.getTag();
       const params = parseNfcVerifyParams(tag);
       if (!params) throw new Error('NFC 태그에서 인증 정보를 읽지 못했습니다.');
-      // 화면에 표시할 UID: SUN/SDM 모드면 picc_data 앞 8자, 레거시면 tagUid
-      setScannedUid(params.tagUid ?? params.piccData?.slice(0, 8) ?? '');
       await verifyTag(params);
     } catch (err) {
       const msg = err?.message || '';
@@ -267,13 +270,6 @@ export default function TagScreen({ navigation }) {
                 <Ionicons name="close-circle" size={52} color={colors.primary} style={{ marginBottom: 8 }} />
                 <Text style={styles.errorTitle}>{t('tag.errorTitle')}</Text>
                 <Text style={styles.errorMsg}>{errorMsg}</Text>
-                {scannedUid ? (
-                  <View style={styles.uidBox}>
-                    <Text style={styles.uidLabel}>{t('tag.scannedUidLabel')}</Text>
-                    <Text style={styles.uidValue}>{scannedUid}</Text>
-                    <Text style={styles.uidHint}>{t('tag.uidHint')}</Text>
-                  </View>
-                ) : null}
                 <TouchableOpacity style={styles.resetBtn} onPress={reset}>
                   <Text style={styles.resetBtnText}>{t('tag.tryAgain')}</Text>
                 </TouchableOpacity>
@@ -341,10 +337,6 @@ const styles = StyleSheet.create({
   errorWrap: { alignItems: 'center', gap: 10, width: '100%' },
   errorTitle: { fontSize: 20, fontWeight: '800', color: colors.primary },
   errorMsg: { ...typography.body, textAlign: 'center', color: colors.gray600 },
-  uidBox: { width: '100%', backgroundColor: colors.gray100, borderRadius: radius.md, padding: 12, gap: 4 },
-  uidLabel: { fontSize: 11, fontWeight: '700', color: colors.gray500 },
-  uidValue: { fontSize: 13, fontWeight: '800', color: colors.gray900, fontFamily: 'monospace' },
-  uidHint: { fontSize: 11, color: colors.gray400, lineHeight: 16 },
   iosGuide: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.gray100, borderRadius: radius.sm, padding: 12, marginBottom: 24 },
   iosGuideText: { flex: 1, fontSize: 12, color: colors.gray500, lineHeight: 16 },
   campaigns: { marginTop: 8 },

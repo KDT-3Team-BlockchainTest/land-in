@@ -1,14 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { collectionsApi } from '../api/collections';
+import { nftsApi } from '../api/nfts';
 import PlaceImage from '../components/common/PlaceImage';
 import ProgressBar from '../components/common/ProgressBar';
 import EmptyState from '../components/common/EmptyState';
 import AppHeader from '../components/layout/AppHeader';
 import { useLanguage } from '../contexts/useLanguage';
 import { colors, radius, shadow, typography } from '../theme';
+
+const RARITY_COLOR = { legendary: '#f59e0b', rare: colors.violet, common: colors.gray500 };
+
+function NftMiniCard({ item }) {
+  const rc = RARITY_COLOR[item.rarity] || colors.gray400;
+  return (
+    <View style={nftStyles.card}>
+      {item.image
+        ? <Image source={{ uri: item.image }} style={nftStyles.image} />
+        : <View style={[nftStyles.image, nftStyles.placeholder]}><Ionicons name="diamond-outline" size={28} color={colors.violet} /></View>
+      }
+      <View style={nftStyles.body}>
+        <Text style={nftStyles.name} numberOfLines={1}>{item.name}</Text>
+        <Text style={nftStyles.serial}>{item.serial}</Text>
+        {item.rarity && <Text style={[nftStyles.rarity, { color: rc }]}>{item.rarity.toUpperCase()}</Text>}
+      </View>
+    </View>
+  );
+}
 
 function CollectionCard({ item, onPress }) {
   return (
@@ -69,6 +89,7 @@ export default function CollectionScreen({ navigation }) {
 
   const [filter, setFilter] = useState('all');
   const [collections, setCollections] = useState([]);
+  const [nfts, setNfts] = useState([]);
   const [allCollections, setAllCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,10 +98,18 @@ export default function CollectionScreen({ navigation }) {
   const load = useCallback(async (f) => {
     setError(null);
     try {
-      const data = await collectionsApi.list(f);
-      setCollections(data || []);
+      if (f === 'nft') {
+        const data = await nftsApi.list();
+        setNfts(data || []);
+        setCollections([]);
+      } else {
+        const data = await collectionsApi.list(f);
+        setCollections(data || []);
+        setNfts([]);
+      }
     } catch (err) {
       setCollections([]);
+      setNfts([]);
       setError(err?.message || '불러오기에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -144,20 +173,31 @@ export default function CollectionScreen({ navigation }) {
     </View>
   );
 
+  const isNftMode = filter === 'nft';
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <AppHeader />
       <FlatList
+        key={isNftMode ? 'nft-grid' : 'collection-list'}
         style={styles.flatList}
-        data={loading || error ? [] : collections}
+        data={loading || error ? [] : (isNftMode ? nfts : collections)}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <CollectionCard item={item} onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} />
-        )}
+        numColumns={isNftMode ? 2 : 1}
+        columnWrapperStyle={isNftMode ? styles.nftRow : undefined}
+        renderItem={({ item }) =>
+          isNftMode
+            ? <NftMiniCard item={item} />
+            : <CollectionCard item={item} onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} />
+        }
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={
           !loading && !error
-            ? <EmptyState icon="albums-outline" title={t('collection.emptyCollectionTitle')} subtitle={t('collection.emptyCollectionDescription')} />
+            ? <EmptyState
+                icon={isNftMode ? 'diamond-outline' : 'albums-outline'}
+                title={isNftMode ? t('collection.emptyNftTitle') : t('collection.emptyCollectionTitle')}
+                subtitle={isNftMode ? t('collection.emptyNftDescription') : t('collection.emptyCollectionDescription')}
+              />
             : null
         }
         contentContainerStyle={[styles.list, { paddingBottom: 72 }]}
@@ -223,4 +263,15 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 14, color: colors.gray500, textAlign: 'center', paddingHorizontal: 32 },
   retryBtn: { borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.primary, paddingHorizontal: 24, paddingVertical: 10 },
   retryText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+  nftRow: { gap: 12, marginBottom: 12 },
+});
+
+const nftStyles = StyleSheet.create({
+  card: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden', ...shadow.card },
+  image: { width: '100%', aspectRatio: 1 },
+  placeholder: { backgroundColor: 'rgba(139,92,246,0.08)', alignItems: 'center', justifyContent: 'center' },
+  body: { padding: 10 },
+  name: { fontSize: 13, fontWeight: '700', color: colors.gray900 },
+  serial: { fontSize: 11, color: colors.gray400, marginTop: 2 },
+  rarity: { fontSize: 11, fontWeight: '700', marginTop: 2 },
 });

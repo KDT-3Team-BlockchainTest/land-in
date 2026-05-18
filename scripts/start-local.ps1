@@ -226,7 +226,7 @@ if (-not (Test-Port $AdminPort)) {
 }
 
 Write-Host "Waiting for services..."
-$backendReady = Wait-Http "http://127.0.0.1:$BackendPort/api/events" 120
+$backendReady = Wait-Http "http://127.0.0.1:$BackendPort/api/admin/auth/me" 120
 $frontendReady = Wait-Http "http://127.0.0.1:$FrontendPort/" 60
 $adminReady = Wait-Http "http://127.0.0.1:$AdminPort/" 60
 
