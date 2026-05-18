@@ -14,7 +14,9 @@ export default function TagCampaignCard({ event, onPress }) {
         <Text style={styles.region}>{event.flag} {event.region}</Text>
         <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
         <View style={styles.progressRow}>
-          <ProgressBar percent={pct} color={event.themeColor || colors.primary} />
+          <View style={{ flex: 1 }}>
+            <ProgressBar percent={pct} color={event.themeColor || colors.primary} />
+          </View>
           <Text style={styles.pct}>{Math.round(pct)}%</Text>
         </View>
         <View style={styles.meta}>
@@ -28,7 +30,7 @@ export default function TagCampaignCard({ event, onPress }) {
 
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden', marginBottom: 10, ...shadow.card },
-  image: { width: 88, height: 88 },
+  image: { width: 88, alignSelf: 'stretch' },
   body: { flex: 1, padding: 12, justifyContent: 'center', gap: 4 },
   region: { fontSize: 11, color: colors.gray500, fontWeight: '600' },
   title: { fontSize: 14, fontWeight: '700', color: colors.gray900 },

@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { nfcApi } from '../api/nfc';
+import { nftsApi } from '../api/nfts';
 import { collectionsApi } from '../api/collections';
 import TagCampaignCard from '../components/tag/TagCampaignCard';
 import SectionHeader from '../components/common/SectionHeader';
@@ -30,7 +31,6 @@ export default function TagScreen({ navigation }) {
   const [nfcSupported, setNfcSupported] = useState(null);
   const [mintedNft, setMintedNft] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const [scannedUid, setScannedUid] = useState('');
   const [campaigns, setCampaigns] = useState([]);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanning = useRef(false);
@@ -65,19 +65,53 @@ export default function TagScreen({ navigation }) {
     return () => anim.stop();
   }, [phase, pulseAnim]);
 
-  const parseTagUid = (tag) => {
+  /**
+   * NDEF URL 레코드(TNF=0x01, type='U')에서 NTAG 424 DNA SUN 파라미터를 추출한다.
+   * picc_data와 cmac가 모두 있으면 SUN/SDM 모드 파라미터를 반환하고,
+   * 없으면 레거시 UID 파라미터를 반환한다.
+   */
+  const parseNfcVerifyParams = (tag) => {
+    const URL_PREFIXES = ['', 'http://www.', 'https://www.', 'http://', 'https://', 'tel:', 'mailto:', 'ftp://anonymous:anonymous@', 'ftp://ftp.', 'ftps://', 'sftp://', 'smb://', 'nfs://', 'ftp://', 'dav://', 'news:', 'telnet://', 'imap:', 'rtsp://', 'urn:', 'pop:', 'sip:', 'sips:', 'tftp:', 'btspp://', 'btl2cap://', 'btgoep://', 'tcpobex://', 'irdaobex://', 'file://', 'urn:epc:id:', 'urn:epc:tag:', 'urn:epc:pat:', 'urn:epc:raw:', 'urn:epc:', 'urn:nfc:'];
+
+    if (tag?.ndefMessage) {
+      for (const record of tag.ndefMessage) {
+        // TNF=1 (Well Known), type=[0x55]='U' → URL レコード
+        if (record.tnf === 1 && record.type) {
+          const typeByte = String.fromCharCode(...Array.from(record.type));
+          if (typeByte === 'U' && record.payload?.length > 1) {
+            const prefixByte = record.payload[0];
+            const prefix = URL_PREFIXES[prefixByte] ?? '';
+            const body = String.fromCharCode(...Array.from(record.payload).slice(1));
+            const fullUrl = prefix + body;
+            try {
+              const url = new URL(fullUrl);
+              const piccData = url.searchParams.get('picc_data');
+              const cmac = url.searchParams.get('cmac');
+              if (piccData && cmac) {
+                return { piccData, cmac };
+              }
+            } catch {}
+          }
+        }
+      }
+    }
+
+    // 레거시 폴백: 태그 raw UID
     if (!tag?.id) return null;
-    return Array.from(tag.id).map((b) => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+    const tagUid = Array.from(tag.id).map((b) => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+    return { tagUid };
   };
 
-  const verifyTag = useCallback(async (tagUid) => {
+  const verifyTag = useCallback(async (verifyParams) => {
     setPhase(PHASE.VERIFYING);
     try {
-      const result = await nfcApi.verify(tagUid);
+      const result = await nfcApi.verify(verifyParams);
       if (!result) throw new Error('서버 응답이 없습니다.');
-      setMintedNft(result);
+      const nft = result.mintedNft;
+      if (!nft) throw new Error('NFT 정보를 받지 못했습니다.');
+      setMintedNft(nft);
 
-      if (result.mintStatus === MINT_STATUS.PENDING_ONCHAIN) {
+      if (nft.mintStatus === MINT_STATUS.PENDING_ONCHAIN) {
         setPhase(PHASE.MINTING);
         let attempts = 0;
         pollTimer.current = setInterval(async () => {
@@ -88,10 +122,14 @@ export default function TagScreen({ navigation }) {
             return;
           }
           try {
-            const updated = await nfcApi.verify(tagUid);
+            const updated = await nftsApi.getById(nft.id);
             if (updated?.mintStatus !== MINT_STATUS.PENDING_ONCHAIN) {
               clearInterval(pollTimer.current);
-              setMintedNft(updated);
+              setMintedNft((prev) => ({
+                ...prev,
+                mintStatus: updated.mintStatus,
+                transactionHash: updated.transactionHash,
+              }));
               setPhase(PHASE.MINTED);
             }
           } catch { /* keep polling */ }
@@ -112,10 +150,9 @@ export default function TagScreen({ navigation }) {
     try {
       await NfcManager.requestTechnology(NfcTech.Ndef);
       const tag = await NfcManager.getTag();
-      const uid = parseTagUid(tag);
-      if (!uid) throw new Error('NFC 태그 UID를 읽지 못했습니다.');
-      setScannedUid(uid);
-      await verifyTag(uid);
+      const params = parseNfcVerifyParams(tag);
+      if (!params) throw new Error('NFC 태그에서 인증 정보를 읽지 못했습니다.');
+      await verifyTag(params);
     } catch (err) {
       const msg = err?.message || '';
       if (msg.includes('cancel') || msg.includes('Cancel') || msg.includes('cancelled')) {
@@ -144,7 +181,7 @@ export default function TagScreen({ navigation }) {
   }[mintedNft?.rarity?.toLowerCase()] || colors.primary;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <AppHeader />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
@@ -233,13 +270,6 @@ export default function TagScreen({ navigation }) {
                 <Ionicons name="close-circle" size={52} color={colors.primary} style={{ marginBottom: 8 }} />
                 <Text style={styles.errorTitle}>{t('tag.errorTitle')}</Text>
                 <Text style={styles.errorMsg}>{errorMsg}</Text>
-                {scannedUid ? (
-                  <View style={styles.uidBox}>
-                    <Text style={styles.uidLabel}>{t('tag.scannedUidLabel')}</Text>
-                    <Text style={styles.uidValue}>{scannedUid}</Text>
-                    <Text style={styles.uidHint}>{t('tag.uidHint')}</Text>
-                  </View>
-                ) : null}
                 <TouchableOpacity style={styles.resetBtn} onPress={reset}>
                   <Text style={styles.resetBtnText}>{t('tag.tryAgain')}</Text>
                 </TouchableOpacity>
@@ -307,10 +337,6 @@ const styles = StyleSheet.create({
   errorWrap: { alignItems: 'center', gap: 10, width: '100%' },
   errorTitle: { fontSize: 20, fontWeight: '800', color: colors.primary },
   errorMsg: { ...typography.body, textAlign: 'center', color: colors.gray600 },
-  uidBox: { width: '100%', backgroundColor: colors.gray100, borderRadius: radius.md, padding: 12, gap: 4 },
-  uidLabel: { fontSize: 11, fontWeight: '700', color: colors.gray500 },
-  uidValue: { fontSize: 13, fontWeight: '800', color: colors.gray900, fontFamily: 'monospace' },
-  uidHint: { fontSize: 11, color: colors.gray400, lineHeight: 16 },
   iosGuide: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.gray100, borderRadius: radius.sm, padding: 12, marginBottom: 24 },
   iosGuideText: { flex: 1, fontSize: 12, color: colors.gray500, lineHeight: 16 },
   campaigns: { marginTop: 8 },

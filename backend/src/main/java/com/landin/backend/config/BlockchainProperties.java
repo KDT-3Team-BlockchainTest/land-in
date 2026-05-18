@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class BlockchainProperties {
 
     private boolean enabled = false;
+    private boolean skipMetadataUrlCheck = false;
     private long chainId = 560048L;
     private String rpcUrl = "https://rpc.hoodi.ethpandaops.io";
     private String contractAddress;

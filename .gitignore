@@ -1,2 +1,4 @@
 .landin-runtime/
+**/.env
+!**/.env.example
 

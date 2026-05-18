@@ -118,7 +118,7 @@ export default function RewardsScreen() {
   }, [load, filter, t]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <AppHeader />
       <Text style={styles.pageTitle}>{t('rewards.title')}</Text>
       <View style={styles.filterRow}>

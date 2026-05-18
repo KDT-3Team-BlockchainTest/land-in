@@ -2,6 +2,7 @@ package com.landin.backend.domain.nfc.service;
 
 import com.landin.backend.common.exception.BusinessException;
 import com.landin.backend.common.exception.ErrorCode;
+import com.landin.backend.config.NfcProperties;
 import com.landin.backend.domain.blockchain.fabric.FabricVisitGateway;
 import com.landin.backend.domain.event.entity.Event;
 import com.landin.backend.domain.event.entity.EventStatus;
@@ -67,27 +68,68 @@ public class NfcService {
     private final UserRepository userRepository;
     private final OnChainNftMintService onChainNftMintService;
     private final FabricVisitGateway fabricVisitGateway;
+    private final SunSdmVerifier sunSdmVerifier;
+    private final NfcProperties nfcProperties;
 
     @Transactional
     public NfcVerifyResponse verify(UUID userId, NfcVerifyRequest request) {
-        String rawTagValue = Objects.requireNonNull(request.getTagUid(), "Tag UID must not be null");
-        String tagUid = normalizeTagUid(rawTagValue);
+        Objects.requireNonNull(userId, "User id must not be null");
+
+        // ── Step 1: tagUid 결정 (SUN/SDM 모드 또는 레거시 모드) ──────────────────
+        final String tagUid;
+        final Integer sdmCounter;
+
+        if (request.hasSdmData()) {
+            // SUN/SDM 모드: piccData 복호화 → UID + 카운터 추출 + CMAC 검증
+            if (!nfcProperties.getSdm().isConfigured()) {
+                log.error("[NfcService] SUN/SDM 요청이 왔으나 서버에 SDM 키 미설정. userId={}", userId);
+                throw new BusinessException(ErrorCode.SUN_NOT_CONFIGURED);
+            }
+            if (request.getCmac() == null || request.getCmac().isBlank()) {
+                throw new BusinessException(ErrorCode.SUN_PICC_INVALID);
+            }
+            SunSdmVerifier.SunSdmResult sdmResult = sunSdmVerifier.verify(
+                    request.getPiccData(), request.getCmac(),
+                    nfcProperties.getSdm().getEncKey(), nfcProperties.getSdm().getMacKey());
+            tagUid = sdmResult.tagUid();
+            sdmCounter = sdmResult.counter();
+            log.info("[NfcService] SUN/SDM 모드 요청. userId={}, tagUid={}, counter={}", userId, tagUid, sdmCounter);
+        } else {
+            // 레거시 모드: 앱이 직접 tagUid 전송
+            if (request.getTagUid() == null || request.getTagUid().isBlank()) {
+                throw new BusinessException(ErrorCode.UNKNOWN_TAG);
+            }
+            tagUid = normalizeTagUid(request.getTagUid());
+            sdmCounter = null;
+            log.info("[NfcService] 레거시 모드 요청. userId={}, tagUid={}", userId, tagUid);
+        }
+
         User user = Objects.requireNonNull(
-                userRepository.getReferenceById(Objects.requireNonNull(userId, "User id must not be null")),
+                userRepository.getReferenceById(userId),
                 "User reference must not be null"
         );
 
-        log.info("[NfcService] verify request received. userId={}, rawTagValue={}, normalizedTagUid={}", userId, rawTagValue, tagUid);
-
+        // ── Step 2: 태그 조회 및 활성 상태 확인 ────────────────────────────────
         NfcTag nfcTag = nfcTagRepository.findByTagUid(tagUid).orElse(null);
         if (nfcTag == null) {
-            log.warn("[NfcService] unknown tag. userId={}, rawTagValue={}, normalizedTagUid={}", userId, rawTagValue, tagUid);
+            log.warn("[NfcService] 등록되지 않은 태그. userId={}, tagUid={}", userId, tagUid);
             saveLog(user, tagUid, NfcScanResult.UNKNOWN_TAG);
             throw new BusinessException(ErrorCode.UNKNOWN_TAG);
         }
         if (!nfcTag.isActive()) {
             saveLog(user, tagUid, NfcScanResult.UNKNOWN_TAG);
             throw new BusinessException(ErrorCode.TAG_INACTIVE);
+        }
+
+        // ── Step 3: SUN/SDM 재전송 공격 방지 (카운터 단조 증가 확인) ────────────
+        if (sdmCounter != null) {
+            if (sdmCounter <= nfcTag.getLastNfcCounter()) {
+                log.warn("[NfcService] NFC 카운터 재사용 감지. userId={}, tagUid={}, counter={}, lastCounter={}",
+                        userId, tagUid, sdmCounter, nfcTag.getLastNfcCounter());
+                saveLog(user, tagUid, NfcScanResult.COUNTER_REPLAY);
+                throw new BusinessException(ErrorCode.SUN_COUNTER_REPLAY);
+            }
+            nfcTag.updateNfcCounter(sdmCounter);
         }
 
         Step step = nfcTag.getStep();

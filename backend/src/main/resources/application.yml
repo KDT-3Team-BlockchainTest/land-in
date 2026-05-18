@@ -36,6 +36,13 @@ app:
   cors:
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000}
 
+nfc:
+  sdm:
+    enabled: ${NFC_SDM_ENABLED:false}
+    enc-key: ${NFC_SDM_ENC_KEY:}   # AES-128 SDMMetaReadKey hex (32자) — NXP 태그 설정 시 발급
+    mac-key: ${NFC_SDM_MAC_KEY:}   # AES-128 SDMFileReadKey hex (32자) — NXP 태그 설정 시 발급
+
+
 fabric:
   enabled: ${FABRIC_ENABLED:false}
   channel-name: ${FABRIC_CHANNEL_NAME:channel1}
