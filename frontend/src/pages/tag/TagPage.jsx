@@ -141,62 +141,88 @@ function ConfettiLayer() {
   );
 }
 
-function parseTagValueFromUrl(value) {
+/**
+ * URL 문자열에서 NTAG 424 DNA SUN/SDM 파라미터 또는 레거시 tagUid를 추출한다.
+ *
+ * SUN/SDM URL 예시: https://example.com/tag?picc_data=EF96...&cmac=94EE...
+ * 레거시 URL 예시:  https://example.com/tag?tagUid=04:AB:CD:...
+ *
+ * @returns {{ piccData: string, cmac: string } | { tagUid: string } | null}
+ */
+function parseVerifyParamsFromUrl(value) {
   try {
     const url = new URL(value);
-    const fromQuery = url.searchParams.get("tagUid");
-    if (fromQuery) return fromQuery.trim();
 
+    // SUN/SDM 모드: picc_data + cmac 우선
+    const piccData = url.searchParams.get("picc_data");
+    const cmac = url.searchParams.get("cmac");
+    if (piccData && cmac) {
+      return { piccData: piccData.trim(), cmac: cmac.trim() };
+    }
+
+    // 레거시 모드: tagUid
+    const tagUid = url.searchParams.get("tagUid");
+    if (tagUid) return { tagUid: tagUid.trim() };
+
+    // URL 경로 마지막 세그먼트 폴백
     const pathSegments = url.pathname.split("/").filter(Boolean);
-    if (pathSegments.length > 0) return pathSegments[pathSegments.length - 1].trim();
+    if (pathSegments.length > 0) {
+      return { tagUid: pathSegments[pathSegments.length - 1].trim() };
+    }
   } catch {
-    // not a URL, fall through
+    // URL이 아닌 경우 → 값 자체를 tagUid로 사용
   }
 
-  return value.trim();
+  const trimmed = value.trim();
+  return trimmed ? { tagUid: trimmed } : null;
 }
 
-function decodeTextRecord(record) {
-  const rawValue = new TextDecoder(record.encoding || "utf-8").decode(record.data).trim();
-  if (/^TAG-[A-Z0-9-]+$/i.test(rawValue)) {
-    return rawValue;
-  }
-  return "";
-}
-
-function decodeRecordValue(record) {
-  if (!record?.data) return "";
-
-  if (record.recordType === "text") {
-    return decodeTextRecord(record);
-  }
+/**
+ * Web NFC NDEF 레코드에서 SUN/SDM 파라미터 또는 레거시 tagUid를 추출한다.
+ *
+ * @returns {{ piccData: string, cmac: string } | { tagUid: string } | null}
+ */
+function decodeRecordVerifyParams(record) {
+  if (!record?.data) return null;
 
   if (record.recordType === "url" || record.recordType === "absolute-url") {
-    return parseTagValueFromUrl(new TextDecoder().decode(record.data));
+    return parseVerifyParamsFromUrl(new TextDecoder().decode(record.data));
+  }
+
+  if (record.recordType === "text") {
+    const rawValue = new TextDecoder(record.encoding || "utf-8").decode(record.data).trim();
+    if (/^TAG-[A-Z0-9-]+$/i.test(rawValue)) {
+      return { tagUid: rawValue };
+    }
+    return null;
   }
 
   if (record.recordType === "mime" && record.mediaType === "application/json") {
     try {
       const payload = JSON.parse(new TextDecoder().decode(record.data));
-      if (typeof payload.tagUid === "string") return payload.tagUid.trim();
+      if (payload.piccData && payload.cmac) {
+        return { piccData: String(payload.piccData).trim(), cmac: String(payload.cmac).trim() };
+      }
+      if (typeof payload.tagUid === "string") {
+        return { tagUid: payload.tagUid.trim() };
+      }
     } catch {
-      return "";
+      return null;
     }
   }
 
   if (typeof record.toRecords === "function") {
     try {
-      const nestedRecords = record.toRecords();
-      for (const nestedRecord of nestedRecords) {
-        const nestedValue = decodeRecordValue(nestedRecord);
-        if (nestedValue) return nestedValue;
+      for (const nested of record.toRecords()) {
+        const params = decodeRecordVerifyParams(nested);
+        if (params) return params;
       }
     } catch {
-      return "";
+      return null;
     }
   }
 
-  return "";
+  return null;
 }
 
 function isWebNfcSupported() {
@@ -260,7 +286,15 @@ function shouldPollMintStatus(mintedNft) {
   return mintedNft?.id && mintedNft.mintStatus === "PENDING_ONCHAIN";
 }
 
-async function readTagValueFromDevice() {
+/**
+ * Web NFC로 태그를 읽어 SUN/SDM 파라미터 또는 레거시 tagUid를 반환한다.
+ *
+ * NTAG 424 DNA SUN URL(picc_data + cmac)이 있으면 SUN/SDM 모드 파라미터를,
+ * 없으면 시리얼 넘버를 레거시 tagUid로 반환한다.
+ *
+ * @returns {Promise<{ piccData: string, cmac: string } | { tagUid: string }>}
+ */
+async function readTagParamsFromDevice() {
   if (!isWebNfcSupported()) {
     throw new Error("이 브라우저에서는 NFC 직접 읽기를 사용할 수 없습니다.");
   }
@@ -282,21 +316,23 @@ async function readTagValueFromDevice() {
       "reading",
       (event) => {
         try {
-          let resolvedValue = event.serialNumber?.trim() ?? "";
-
+          // NDEF 레코드에서 SUN/SDM 파라미터 우선 추출
           for (const record of event.message.records) {
-            const recordValue = decodeRecordValue(record);
-            if (recordValue) {
-              resolvedValue = recordValue;
-              break;
+            const params = decodeRecordVerifyParams(record);
+            if (params) {
+              finish(resolve, params);
+              return;
             }
           }
 
-          if (!resolvedValue) {
-            throw new Error("태그에서 사용할 값을 찾지 못했습니다.");
+          // 폴백: 시리얼 넘버를 레거시 tagUid로 사용
+          const serialNumber = event.serialNumber?.trim();
+          if (serialNumber) {
+            finish(resolve, { tagUid: serialNumber });
+            return;
           }
 
-          finish(resolve, resolvedValue);
+          throw new Error("태그에서 인증 정보를 찾지 못했습니다.");
         } catch (error) {
           finish(reject, error);
         }
@@ -324,6 +360,8 @@ export default function TagPage() {
   const [collections, setCollections] = useState([]);
   const [phase, setPhase] = useState("ready");
   const [tagUid, setTagUid] = useState("");
+  /** SUN/SDM 또는 레거시 verify 파라미터 — nfcApi.verify()에 직접 전달 */
+  const [verifyParams, setVerifyParams] = useState(null);
   const [mintedNft, setMintedNft] = useState(null);
   const [mintError, setMintError] = useState("");
   const [nfcReading, setNfcReading] = useState(false);
@@ -337,14 +375,30 @@ export default function TagPage() {
   }, []);
 
   useEffect(() => {
+    // iOS NFC 리다이렉트: 태그가 URL을 열어 파라미터를 전달하는 경우
+    // SUN/SDM: ?picc_data=...&cmac=...
+    // 레거시:  ?tagUid=...
+    const piccData = searchParams.get("picc_data")?.trim();
+    const cmac = searchParams.get("cmac")?.trim();
     const tagUidFromQuery = searchParams.get("tagUid")?.trim();
-    if (!tagUidFromQuery) return;
-    if (phase !== "ready") return;
-    if (lastAutoVerifiedTagRef.current === tagUidFromQuery) return;
 
-    lastAutoVerifiedTagRef.current = tagUidFromQuery;
+    let params = null;
+    if (piccData && cmac) {
+      params = { piccData, cmac };
+    } else if (tagUidFromQuery) {
+      params = { tagUid: tagUidFromQuery };
+    }
+
+    if (!params) return;
+    if (phase !== "ready") return;
+
+    const dedupeKey = piccData ?? tagUidFromQuery ?? "";
+    if (lastAutoVerifiedTagRef.current === dedupeKey) return;
+
+    lastAutoVerifiedTagRef.current = dedupeKey;
     setMintError("");
-    setTagUid(tagUidFromQuery);
+    setTagUid(tagUidFromQuery ?? piccData?.slice(0, 8) ?? "");
+    setVerifyParams(params);
     setPhase("scanning");
   }, [phase, searchParams]);
 
@@ -362,7 +416,7 @@ export default function TagPage() {
       setPhase("minting");
 
       try {
-        const result = await nfcApi.verify(tagUid);
+        const result = await nfcApi.verify(verifyParams);
         setMintedNft(result.mintedNft);
         setPhase("minted");
       } catch (error) {
@@ -372,7 +426,7 @@ export default function TagPage() {
     }, VERIFIED_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [phase, tagUid]);
+  }, [phase, verifyParams]);
 
   useEffect(() => {
     if (!shouldPollMintStatus(mintedNft)) return undefined;
@@ -414,6 +468,7 @@ export default function TagPage() {
   const resetToReady = () => {
     setPhase("ready");
     setTagUid("");
+    setVerifyParams(null);
     setMintError("");
     setMintedNft(null);
   };
@@ -421,6 +476,7 @@ export default function TagPage() {
   const handleStartScan = () => {
     if (!tagUid.trim()) return;
     setMintError("");
+    setVerifyParams({ tagUid: tagUid.trim() });
     setPhase("scanning");
   };
 
@@ -429,8 +485,10 @@ export default function TagPage() {
     setNfcReading(true);
 
     try {
-      const value = await readTagValueFromDevice();
-      setTagUid(value);
+      const params = await readTagParamsFromDevice();
+      setVerifyParams(params);
+      // 화면 표시용 UID: SUN/SDM이면 picc_data 앞 8자, 레거시면 tagUid
+      setTagUid(params.tagUid ?? params.piccData?.slice(0, 8) ?? "");
       setPhase("scanning");
     } catch (error) {
       setMintError(formatNfcReadError(error));

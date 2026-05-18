@@ -367,6 +367,9 @@ public class OnChainNftMintService {
     }
 
     private String validateMetadataBaseUrl() {
+        if (blockchainProperties.isSkipMetadataUrlCheck()) {
+            return null;
+        }
         String normalized = normalize(resolveMetadataBaseUrl());
         if (normalized == null) {
             return "Set APP_PUBLIC_BASE_URL to a public URL before on-chain minting.";

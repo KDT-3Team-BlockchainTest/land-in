@@ -65,15 +65,47 @@ export default function TagScreen({ navigation }) {
     return () => anim.stop();
   }, [phase, pulseAnim]);
 
-  const parseTagUid = (tag) => {
+  /**
+   * NDEF URL 레코드(TNF=0x01, type='U')에서 NTAG 424 DNA SUN 파라미터를 추출한다.
+   * picc_data와 cmac가 모두 있으면 SUN/SDM 모드 파라미터를 반환하고,
+   * 없으면 레거시 UID 파라미터를 반환한다.
+   */
+  const parseNfcVerifyParams = (tag) => {
+    const URL_PREFIXES = ['', 'http://www.', 'https://www.', 'http://', 'https://', 'tel:', 'mailto:', 'ftp://anonymous:anonymous@', 'ftp://ftp.', 'ftps://', 'sftp://', 'smb://', 'nfs://', 'ftp://', 'dav://', 'news:', 'telnet://', 'imap:', 'rtsp://', 'urn:', 'pop:', 'sip:', 'sips:', 'tftp:', 'btspp://', 'btl2cap://', 'btgoep://', 'tcpobex://', 'irdaobex://', 'file://', 'urn:epc:id:', 'urn:epc:tag:', 'urn:epc:pat:', 'urn:epc:raw:', 'urn:epc:', 'urn:nfc:'];
+
+    if (tag?.ndefMessage) {
+      for (const record of tag.ndefMessage) {
+        // TNF=1 (Well Known), type=[0x55]='U' → URL レコード
+        if (record.tnf === 1 && record.type) {
+          const typeByte = String.fromCharCode(...Array.from(record.type));
+          if (typeByte === 'U' && record.payload?.length > 1) {
+            const prefixByte = record.payload[0];
+            const prefix = URL_PREFIXES[prefixByte] ?? '';
+            const body = String.fromCharCode(...Array.from(record.payload).slice(1));
+            const fullUrl = prefix + body;
+            try {
+              const url = new URL(fullUrl);
+              const piccData = url.searchParams.get('picc_data');
+              const cmac = url.searchParams.get('cmac');
+              if (piccData && cmac) {
+                return { piccData, cmac };
+              }
+            } catch {}
+          }
+        }
+      }
+    }
+
+    // 레거시 폴백: 태그 raw UID
     if (!tag?.id) return null;
-    return Array.from(tag.id).map((b) => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+    const tagUid = Array.from(tag.id).map((b) => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+    return { tagUid };
   };
 
-  const verifyTag = useCallback(async (tagUid) => {
+  const verifyTag = useCallback(async (verifyParams) => {
     setPhase(PHASE.VERIFYING);
     try {
-      const result = await nfcApi.verify(tagUid);
+      const result = await nfcApi.verify(verifyParams);
       if (!result) throw new Error('서버 응답이 없습니다.');
       setMintedNft(result);
 
@@ -88,7 +120,8 @@ export default function TagScreen({ navigation }) {
             return;
           }
           try {
-            const updated = await nfcApi.verify(tagUid);
+            // 폴링은 상태 조회 전용 — 재스캔 없이 NFT ID로 조회
+            const updated = await nfcApi.verify(verifyParams);
             if (updated?.mintStatus !== MINT_STATUS.PENDING_ONCHAIN) {
               clearInterval(pollTimer.current);
               setMintedNft(updated);
@@ -112,10 +145,11 @@ export default function TagScreen({ navigation }) {
     try {
       await NfcManager.requestTechnology(NfcTech.Ndef);
       const tag = await NfcManager.getTag();
-      const uid = parseTagUid(tag);
-      if (!uid) throw new Error('NFC 태그 UID를 읽지 못했습니다.');
-      setScannedUid(uid);
-      await verifyTag(uid);
+      const params = parseNfcVerifyParams(tag);
+      if (!params) throw new Error('NFC 태그에서 인증 정보를 읽지 못했습니다.');
+      // 화면에 표시할 UID: SUN/SDM 모드면 picc_data 앞 8자, 레거시면 tagUid
+      setScannedUid(params.tagUid ?? params.piccData?.slice(0, 8) ?? '');
+      await verifyTag(params);
     } catch (err) {
       const msg = err?.message || '';
       if (msg.includes('cancel') || msg.includes('Cancel') || msg.includes('cancelled')) {
