@@ -18,6 +18,7 @@ blockchain:
   skip-metadata-url-check: ${BLOCKCHAIN_SKIP_METADATA_URL_CHECK:false}
   minter-private-key: ${BLOCKCHAIN_MINTER_PRIVATE_KEY:}
 
+
 fabric:
   enabled: true
   channel-name: channel1
