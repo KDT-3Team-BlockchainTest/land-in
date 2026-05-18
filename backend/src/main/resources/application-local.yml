@@ -13,6 +13,12 @@ jwt:
 app:
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
 
+blockchain:
+  enabled: ${BLOCKCHAIN_ENABLED:false}
+  skip-metadata-url-check: ${BLOCKCHAIN_SKIP_METADATA_URL_CHECK:false}
+  minter-private-key: ${BLOCKCHAIN_MINTER_PRIVATE_KEY:}
+
+
 fabric:
   enabled: true
   channel-name: channel1

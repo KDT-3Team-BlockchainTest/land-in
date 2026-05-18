@@ -44,7 +44,7 @@ export default function MyPageScreen({ navigation }) {
   const cityCount = stats?.cityCount ?? 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <AppHeader />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
         {/* 프로필 카드 */}

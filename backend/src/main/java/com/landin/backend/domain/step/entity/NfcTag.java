@@ -28,6 +28,15 @@ public class NfcTag {
     @Column(nullable = false)
     private boolean active;
 
+    /**
+     * SUN/SDM 재전송 공격 방지용 NFC 카운터.
+     * -1 = 아직 SUN/SDM으로 스캔된 적 없음 (초기값).
+     * 이후 스캔마다 반드시 이전 값보다 커야 한다.
+     */
+    @Builder.Default
+    @Column(name = "last_nfc_counter", nullable = false, columnDefinition = "INT DEFAULT -1")
+    private int lastNfcCounter = -1;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -42,5 +51,9 @@ public class NfcTag {
 
     public void updateActive(boolean active) {
         this.active = active;
+    }
+
+    public void updateNfcCounter(int counter) {
+        this.lastNfcCounter = counter;
     }
 }

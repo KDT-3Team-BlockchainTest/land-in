@@ -27,7 +27,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
   const barHeight = 56 + insets.bottom;
 
   return (
-    <View>
+    <View style={{ height: barHeight }}>
       {/* 플로팅 맵 버튼 (웹 bottom-nav__map-button 동일) */}
       <TouchableOpacity
         style={[styles.mapButton, { bottom: barHeight + 14 }]}
