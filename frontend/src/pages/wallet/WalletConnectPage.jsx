@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { authApi } from "../../api/auth";
 import { walletApi } from "../../api/wallet";
 import { useAuth } from "../../contexts/useAuth";
+import { useLanguage } from "../../i18n/LanguageContext";
 import { readNextPath } from "../../utils/navigation";
 import {
   connectMetaMaskWallet,
@@ -36,12 +37,12 @@ function WalletIcon() {
   );
 }
 
-function formatWalletError(error) {
-  if (!error) return "A problem occurred while connecting the wallet.";
+function formatWalletError(error, t) {
+  if (!error) return t("wallet.error.default");
   if (error.code === "NO_PROVIDER") return error.message;
-  if (error.code === 4001) return "The wallet connection request was cancelled.";
-  if (error.code === -32002) return "A MetaMask connection request is already waiting for approval.";
-  return error.message || "A problem occurred while connecting the wallet.";
+  if (error.code === 4001) return t("wallet.error.cancelled");
+  if (error.code === -32002) return t("wallet.error.pending");
+  return error.message || t("wallet.error.default");
 }
 
 export default function WalletConnectPage() {
@@ -49,6 +50,7 @@ export default function WalletConnectPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user, updateUserProfile } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [mobilePending, setMobilePending] = useState(false);
   const [error, setError] = useState("");
@@ -93,14 +95,14 @@ export default function WalletConnectPage() {
     try {
       const wallet = await connectMetaMaskWallet();
       if (wallet.chainId !== HOODI_CHAIN_ID) {
-        throw new Error("Please switch to the Hoodi testnet and try again.");
+        throw new Error(t("wallet.error.wrong_network"));
       }
 
       const profile = await walletApi.connect(wallet);
       updateUserProfile(profile);
       navigate(nextPath, { replace: true });
     } catch (connectError) {
-      setError(formatWalletError(connectError));
+      setError(formatWalletError(connectError, t));
     } finally {
       setLoading(false);
     }
@@ -158,40 +160,35 @@ export default function WalletConnectPage() {
     <div className="wallet-connect-page">
       <main className="wallet-connect-page__content">
         <section className="wallet-connect-page__hero">
-          <div className="wallet-connect-page__badge">Wallet Onboarding</div>
+          <div className="wallet-connect-page__badge">{t("wallet.badge")}</div>
           <div className="wallet-connect-page__icon-shell">
             <WalletIcon />
           </div>
-          <h1 className="wallet-connect-page__title">
-            Connect MetaMask to unlock the full Land-in experience
-          </h1>
-          <p className="wallet-connect-page__description">
-            Land-in uses Hoodi testnet wallet connections for future on-chain NFT minting. On mobile browsers, this
-            flow opens the MetaMask app and continues inside the MetaMask browser on your phone.
-          </p>
+          <h1 className="wallet-connect-page__title">{t("wallet.title")}</h1>
+          <p className="wallet-connect-page__description">{t("wallet.desc")}</p>
         </section>
 
         <section className="wallet-connect-page__notice-card">
-          <h2>Before you connect</h2>
+          <h2>{t("wallet.notice.title")}</h2>
           <ul>
-            <li>On desktop, Land-in uses your installed wallet. On mobile, it opens MetaMask for approval.</li>
-            <li>If you start in Android Chrome or Safari, Land-in moves you into the MetaMask in-app browser first.</li>
-            <li>Wallet linking stores the address this account will use for future blockchain actions.</li>
-            <li>You can skip this step now and reconnect the same wallet or a different wallet later.</li>
+            <li>{t("wallet.notice.item1")}</li>
+            <li>{t("wallet.notice.item2")}</li>
+            <li>{t("wallet.notice.item3")}</li>
+            <li>{t("wallet.notice.item4")}</li>
           </ul>
         </section>
 
         <section className="wallet-connect-page__network-card">
           <div>
-            <p className="wallet-connect-page__network-label">Target network</p>
-            <strong>Ethereum Hoodi Testnet</strong>
+            <p className="wallet-connect-page__network-label">{t("wallet.network.label")}</p>
+            <strong>{t("wallet.network.name")}</strong>
           </div>
-          <span>Chain ID {HOODI_CHAIN_ID}</span>
+          <span>{t("wallet.chain_id", { chainId: HOODI_CHAIN_ID })}</span>
         </section>
 
         {user?.walletAddress ? (
           <section className="wallet-connect-page__connected-card">
-            <p className="wallet-connect-page__network-label">Currently linked wallet</p>
+            <p className="wallet-connect-page__network-label">{t("wallet.current")}</p>
             <strong>{formatWalletAddress(user.walletAddress)}</strong>
           </section>
         ) : null}
@@ -199,8 +196,7 @@ export default function WalletConnectPage() {
         {error ? <p className="wallet-connect-page__error">{error}</p> : null}
         {mobilePending ? (
           <p className="wallet-connect-page__error">
-            MetaMask approval is in progress. After approving in MetaMask, return to this tab and we will
-            sync automatically.
+            {t("wallet.mobile_pending")}
           </p>
         ) : null}
 
@@ -211,7 +207,7 @@ export default function WalletConnectPage() {
             onClick={handleConnectWallet}
             disabled={loading || mobilePending}
           >
-            {loading ? "Opening MetaMask..." : mobilePending ? "Waiting for approval..." : "Connect MetaMask"}
+            {loading ? t("wallet.btn.opening") : mobilePending ? t("wallet.btn.waiting") : t("wallet.btn.connect")}
           </button>
           {mobilePending ? (
             <button
@@ -220,7 +216,7 @@ export default function WalletConnectPage() {
               onClick={syncProfileFromServer}
               disabled={loading}
             >
-              I approved, check again
+              {t("wallet.btn.check")}
             </button>
           ) : null}
           <button
@@ -229,7 +225,7 @@ export default function WalletConnectPage() {
             onClick={handleSkip}
             disabled={loading || mobilePending}
           >
-            Skip for Now
+            {t("wallet.btn.skip")}
           </button>
         </div>
       </main>

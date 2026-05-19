@@ -6,6 +6,7 @@ import { collectionsApi } from "../../api/collections";
 import { nfcApi } from "../../api/nfc";
 import { nftsApi } from "../../api/nfts";
 import PlaceImage from "../../components/common/PlaceImage/PlaceImage";
+import { useLanguage } from "../../i18n/LanguageContext";
 
 const VERIFY_DELAY_MS = 2500;
 const VERIFIED_DELAY_MS = 1700;
@@ -51,15 +52,15 @@ function ShareIcon({ className = "" }) {
   );
 }
 
-function VerificationGuide() {
+function VerificationGuide({ t }) {
   return (
     <section className="tag-page__guide-card">
-      <h2 className="tag-page__guide-title">사용 방법</h2>
+      <h2 className="tag-page__guide-title">{t("tag.guide.title")}</h2>
       <div className="tag-page__guide-list">
         {[
-          "랜드마크의 NFC 태그를 찾으세요.",
-          "휴대폰을 태그에 가까이 대세요.",
-          "스캔 후 NFT 발행이 끝날 때까지 기다리세요.",
+          t("tag.guide.step1"),
+          t("tag.guide.step2"),
+          t("tag.guide.step3"),
         ].map((step, index) => (
           <div key={step} className="tag-page__guide-item">
             <span className="tag-page__guide-number">{index + 1}</span>
@@ -71,30 +72,21 @@ function VerificationGuide() {
   );
 }
 
-function IosTagGuide() {
+function IosTagGuide({ t }) {
   const faqItems = [
-    {
-      question: "Why is there no read button on iPhone?",
-      answer: "Safari does not let websites start NFC scans directly, so iPhone cannot use the same in-page scan button as Android.",
-    },
-    {
-      question: "How do I tag on iPhone?",
-      answer: "Keep this page open, then place the top of your iPhone near the real NFC tag. The tag should open Land-in automatically.",
-    },
-    {
-      question: "What if nothing happens?",
-      answer: "Check that the NFC tag is programmed with a Land-in URL, the phone is unlocked, and you already finished login, wallet connection, and event join.",
-    },
+    { question: t("tag.ios.faq1.q"), answer: t("tag.ios.faq1.a") },
+    { question: t("tag.ios.faq2.q"), answer: t("tag.ios.faq2.a") },
+    { question: t("tag.ios.faq3.q"), answer: t("tag.ios.faq3.a") },
   ];
 
   return (
     <section className="tag-page__guide-card tag-page__guide-card--ios">
-      <h2 className="tag-page__guide-title">iPhone Tag Guide</h2>
+      <h2 className="tag-page__guide-title">{t("tag.ios.title")}</h2>
       <div className="tag-page__guide-list">
         {[
-          "Stay on this page after login.",
-          "Hold the top edge of your iPhone close to the physical NFC tag.",
-          "When Land-in opens with the tag URL, verification starts automatically.",
+          t("tag.ios.step1"),
+          t("tag.ios.step2"),
+          t("tag.ios.step3"),
         ].map((step, index) => (
           <div key={step} className="tag-page__guide-item">
             <span className="tag-page__guide-number">{index + 1}</span>
@@ -141,88 +133,62 @@ function ConfettiLayer() {
   );
 }
 
-/**
- * URL 문자열에서 NTAG 424 DNA SUN/SDM 파라미터 또는 레거시 tagUid를 추출한다.
- *
- * SUN/SDM URL 예시: https://example.com/tag?picc_data=EF96...&cmac=94EE...
- * 레거시 URL 예시:  https://example.com/tag?tagUid=04:AB:CD:...
- *
- * @returns {{ piccData: string, cmac: string } | { tagUid: string } | null}
- */
-function parseVerifyParamsFromUrl(value) {
+function parseTagValueFromUrl(value) {
   try {
     const url = new URL(value);
+    const fromQuery = url.searchParams.get("tagUid");
+    if (fromQuery) return fromQuery.trim();
 
-    // SUN/SDM 모드: picc_data + cmac 우선
-    const piccData = url.searchParams.get("picc_data");
-    const cmac = url.searchParams.get("cmac");
-    if (piccData && cmac) {
-      return { piccData: piccData.trim(), cmac: cmac.trim() };
-    }
-
-    // 레거시 모드: tagUid
-    const tagUid = url.searchParams.get("tagUid");
-    if (tagUid) return { tagUid: tagUid.trim() };
-
-    // URL 경로 마지막 세그먼트 폴백
     const pathSegments = url.pathname.split("/").filter(Boolean);
-    if (pathSegments.length > 0) {
-      return { tagUid: pathSegments[pathSegments.length - 1].trim() };
-    }
+    if (pathSegments.length > 0) return pathSegments[pathSegments.length - 1].trim();
   } catch {
-    // URL이 아닌 경우 → 값 자체를 tagUid로 사용
+    // not a URL, fall through
   }
 
-  const trimmed = value.trim();
-  return trimmed ? { tagUid: trimmed } : null;
+  return value.trim();
 }
 
-/**
- * Web NFC NDEF 레코드에서 SUN/SDM 파라미터 또는 레거시 tagUid를 추출한다.
- *
- * @returns {{ piccData: string, cmac: string } | { tagUid: string } | null}
- */
-function decodeRecordVerifyParams(record) {
-  if (!record?.data) return null;
-
-  if (record.recordType === "url" || record.recordType === "absolute-url") {
-    return parseVerifyParamsFromUrl(new TextDecoder().decode(record.data));
+function decodeTextRecord(record) {
+  const rawValue = new TextDecoder(record.encoding || "utf-8").decode(record.data).trim();
+  if (/^TAG-[A-Z0-9-]+$/i.test(rawValue)) {
+    return rawValue;
   }
+  return "";
+}
+
+function decodeRecordValue(record) {
+  if (!record?.data) return "";
 
   if (record.recordType === "text") {
-    const rawValue = new TextDecoder(record.encoding || "utf-8").decode(record.data).trim();
-    if (/^TAG-[A-Z0-9-]+$/i.test(rawValue)) {
-      return { tagUid: rawValue };
-    }
-    return null;
+    return decodeTextRecord(record);
+  }
+
+  if (record.recordType === "url" || record.recordType === "absolute-url") {
+    return parseTagValueFromUrl(new TextDecoder().decode(record.data));
   }
 
   if (record.recordType === "mime" && record.mediaType === "application/json") {
     try {
       const payload = JSON.parse(new TextDecoder().decode(record.data));
-      if (payload.piccData && payload.cmac) {
-        return { piccData: String(payload.piccData).trim(), cmac: String(payload.cmac).trim() };
-      }
-      if (typeof payload.tagUid === "string") {
-        return { tagUid: payload.tagUid.trim() };
-      }
+      if (typeof payload.tagUid === "string") return payload.tagUid.trim();
     } catch {
-      return null;
+      return "";
     }
   }
 
   if (typeof record.toRecords === "function") {
     try {
-      for (const nested of record.toRecords()) {
-        const params = decodeRecordVerifyParams(nested);
-        if (params) return params;
+      const nestedRecords = record.toRecords();
+      for (const nestedRecord of nestedRecords) {
+        const nestedValue = decodeRecordValue(nestedRecord);
+        if (nestedValue) return nestedValue;
       }
     } catch {
-      return null;
+      return "";
     }
   }
 
-  return null;
+  return "";
 }
 
 function isWebNfcSupported() {
@@ -234,45 +200,45 @@ function isIosDevice() {
   return /iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-function formatNfcReadError(error) {
-  if (!error) return "NFC 태그를 읽지 못했습니다.";
+function formatNfcReadError(error, t) {
+  if (!error) return t("tag.nfc.error.default");
 
-  if (error.name === "NotAllowedError") return "브라우저의 NFC 권한을 허용해 주세요.";
-  if (error.name === "NotSupportedError") return "이 기기나 브라우저는 Web NFC를 지원하지 않습니다.";
-  if (error.name === "NotReadableError") return "태그를 읽을 수 없습니다. 다시 가까이 대보세요.";
-  if (error.name === "AbortError") return "NFC 읽기가 취소되었습니다.";
+  if (error.name === "NotAllowedError") return t("tag.nfc.error.not_allowed");
+  if (error.name === "NotSupportedError") return t("tag.nfc.error.not_supported");
+  if (error.name === "NotReadableError") return t("tag.nfc.error.not_readable");
+  if (error.name === "AbortError") return t("tag.nfc.error.aborted");
 
-  return error.message || "NFC 태그를 읽지 못했습니다.";
+  return error.message || t("tag.nfc.error.default");
 }
 
-function getMintStatusCopy(mintedNft) {
+function getMintStatusCopy(mintedNft, t) {
   switch (mintedNft?.mintStatus) {
     case "MINTED_ONCHAIN":
       return {
-        title: "On-chain mint completed",
+        title: t("tag.mint.onchain.title"),
         description: mintedNft.tokenId
-          ? `Token #${mintedNft.tokenId} was minted on Hoodi.`
-          : "The NFT was minted on Hoodi and recorded on-chain.",
+          ? t("tag.mint.onchain.desc_token", { tokenId: mintedNft.tokenId })
+          : t("tag.mint.onchain.desc"),
       };
     case "PENDING_WALLET":
       return {
-        title: "Wallet connection required",
-        description: "The NFC proof is saved. Connect your wallet to continue the on-chain mint.",
+        title: t("tag.mint.pending_wallet.title"),
+        description: t("tag.mint.pending_wallet.desc"),
       };
     case "PENDING_ONCHAIN":
       return {
-        title: "On-chain mint pending",
-        description: mintedNft.mintFailureReason || "The NFT was created off-chain and is waiting for the blockchain mint.",
+        title: t("tag.mint.pending_onchain.title"),
+        description: mintedNft.mintFailureReason || t("tag.mint.pending_onchain.desc"),
       };
     case "FAILED_ONCHAIN":
       return {
-        title: "On-chain mint needs retry",
-        description: mintedNft.mintFailureReason || "The NFC proof is saved, but the blockchain mint did not finish.",
+        title: t("tag.mint.failed_onchain.title"),
+        description: mintedNft.mintFailureReason || t("tag.mint.failed_onchain.desc"),
       };
     default:
       return {
-        title: "Off-chain record saved",
-        description: "The NFT record was created in Land-in, but no on-chain result is available yet.",
+        title: t("tag.mint.default.title"),
+        description: t("tag.mint.default.desc"),
       };
   }
 }
@@ -286,17 +252,9 @@ function shouldPollMintStatus(mintedNft) {
   return mintedNft?.id && mintedNft.mintStatus === "PENDING_ONCHAIN";
 }
 
-/**
- * Web NFC로 태그를 읽어 SUN/SDM 파라미터 또는 레거시 tagUid를 반환한다.
- *
- * NTAG 424 DNA SUN URL(picc_data + cmac)이 있으면 SUN/SDM 모드 파라미터를,
- * 없으면 시리얼 넘버를 레거시 tagUid로 반환한다.
- *
- * @returns {Promise<{ piccData: string, cmac: string } | { tagUid: string }>}
- */
-async function readTagParamsFromDevice() {
+async function readTagValueFromDevice(t) {
   if (!isWebNfcSupported()) {
-    throw new Error("이 브라우저에서는 NFC 직접 읽기를 사용할 수 없습니다.");
+    throw new Error(t("tag.nfc.error.no_browser"));
   }
 
   const reader = new window.NDEFReader();
@@ -316,23 +274,21 @@ async function readTagParamsFromDevice() {
       "reading",
       (event) => {
         try {
-          // NDEF 레코드에서 SUN/SDM 파라미터 우선 추출
+          let resolvedValue = event.serialNumber?.trim() ?? "";
+
           for (const record of event.message.records) {
-            const params = decodeRecordVerifyParams(record);
-            if (params) {
-              finish(resolve, params);
-              return;
+            const recordValue = decodeRecordValue(record);
+            if (recordValue) {
+              resolvedValue = recordValue;
+              break;
             }
           }
 
-          // 폴백: 시리얼 넘버를 레거시 tagUid로 사용
-          const serialNumber = event.serialNumber?.trim();
-          if (serialNumber) {
-            finish(resolve, { tagUid: serialNumber });
-            return;
+          if (!resolvedValue) {
+            throw new Error(t("tag.nfc.error.no_value"));
           }
 
-          throw new Error("태그에서 인증 정보를 찾지 못했습니다.");
+          finish(resolve, resolvedValue);
         } catch (error) {
           finish(reject, error);
         }
@@ -343,7 +299,7 @@ async function readTagParamsFromDevice() {
     reader.addEventListener(
       "readingerror",
       () => {
-        finish(reject, new Error("태그 내용을 읽을 수 없습니다."));
+        finish(reject, new Error(t("tag.nfc.error.unreadable")));
       },
       { once: true },
     );
@@ -357,11 +313,10 @@ async function readTagParamsFromDevice() {
 export default function TagPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useLanguage();
   const [collections, setCollections] = useState([]);
   const [phase, setPhase] = useState("ready");
   const [tagUid, setTagUid] = useState("");
-  /** SUN/SDM 또는 레거시 verify 파라미터 — nfcApi.verify()에 직접 전달 */
-  const [verifyParams, setVerifyParams] = useState(null);
   const [mintedNft, setMintedNft] = useState(null);
   const [mintError, setMintError] = useState("");
   const [nfcReading, setNfcReading] = useState(false);
@@ -375,30 +330,14 @@ export default function TagPage() {
   }, []);
 
   useEffect(() => {
-    // iOS NFC 리다이렉트: 태그가 URL을 열어 파라미터를 전달하는 경우
-    // SUN/SDM: ?picc_data=...&cmac=...
-    // 레거시:  ?tagUid=...
-    const piccData = searchParams.get("picc_data")?.trim();
-    const cmac = searchParams.get("cmac")?.trim();
     const tagUidFromQuery = searchParams.get("tagUid")?.trim();
-
-    let params = null;
-    if (piccData && cmac) {
-      params = { piccData, cmac };
-    } else if (tagUidFromQuery) {
-      params = { tagUid: tagUidFromQuery };
-    }
-
-    if (!params) return;
+    if (!tagUidFromQuery) return;
     if (phase !== "ready") return;
+    if (lastAutoVerifiedTagRef.current === tagUidFromQuery) return;
 
-    const dedupeKey = piccData ?? tagUidFromQuery ?? "";
-    if (lastAutoVerifiedTagRef.current === dedupeKey) return;
-
-    lastAutoVerifiedTagRef.current = dedupeKey;
+    lastAutoVerifiedTagRef.current = tagUidFromQuery;
     setMintError("");
-    setTagUid(tagUidFromQuery ?? piccData?.slice(0, 8) ?? "");
-    setVerifyParams(params);
+    setTagUid(tagUidFromQuery);
     setPhase("scanning");
   }, [phase, searchParams]);
 
@@ -416,17 +355,17 @@ export default function TagPage() {
       setPhase("minting");
 
       try {
-        const result = await nfcApi.verify(verifyParams);
+        const result = await nfcApi.verify(tagUid);
         setMintedNft(result.mintedNft);
         setPhase("minted");
       } catch (error) {
-        setMintError(error.message || "NFC 인증에 실패했습니다.");
+        setMintError(error.message || t("tag.nfc.error.default"));
         setPhase("error");
       }
     }, VERIFIED_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [phase, verifyParams]);
+  }, [phase, tagUid]);
 
   useEffect(() => {
     if (!shouldPollMintStatus(mintedNft)) return undefined;
@@ -468,7 +407,6 @@ export default function TagPage() {
   const resetToReady = () => {
     setPhase("ready");
     setTagUid("");
-    setVerifyParams(null);
     setMintError("");
     setMintedNft(null);
   };
@@ -476,7 +414,6 @@ export default function TagPage() {
   const handleStartScan = () => {
     if (!tagUid.trim()) return;
     setMintError("");
-    setVerifyParams({ tagUid: tagUid.trim() });
     setPhase("scanning");
   };
 
@@ -485,13 +422,11 @@ export default function TagPage() {
     setNfcReading(true);
 
     try {
-      const params = await readTagParamsFromDevice();
-      setVerifyParams(params);
-      // 화면 표시용 UID: SUN/SDM이면 picc_data 앞 8자, 레거시면 tagUid
-      setTagUid(params.tagUid ?? params.piccData?.slice(0, 8) ?? "");
+      const value = await readTagValueFromDevice(t);
+      setTagUid(value);
       setPhase("scanning");
     } catch (error) {
-      setMintError(formatNfcReadError(error));
+      setMintError(formatNfcReadError(error, t));
       setPhase("error");
     } finally {
       setNfcReading(false);
@@ -502,15 +437,13 @@ export default function TagPage() {
     return (
       <div className="tag-page">
         <main className="tag-page__content">
-          <h1 className="tag-page__page-title">방문 인증</h1>
+          <h1 className="tag-page__page-title">{t("tag.title")}</h1>
           <section className="tag-page__status-card">
             <div className="tag-page__icon-shell">
               <PhoneIcon className="tag-page__status-icon" />
             </div>
-            <h2 className="tag-page__status-title">인증할 컬렉션이 없어요</h2>
-            <p className="tag-page__status-description">
-              현재 진행 중인 컬렉션이 없어서 NFC 방문 인증을 시작할 수 없습니다.
-            </p>
+            <h2 className="tag-page__status-title">{t("tag.no_collection.title")}</h2>
+            <p className="tag-page__status-description">{t("tag.no_collection.desc")}</p>
           </section>
         </main>
       </div>
@@ -521,7 +454,7 @@ export default function TagPage() {
     <div className={["tag-page", phase === "minting" || phase === "minted" ? "is-mint-stage" : ""].join(" ")}>
       {phase === "minted" && <ConfettiLayer />}
       <main className="tag-page__content">
-        <h1 className="tag-page__page-title">방문 인증</h1>
+        <h1 className="tag-page__page-title">{t("tag.title")}</h1>
 
         {phase === "ready" && (
           <>
@@ -531,30 +464,22 @@ export default function TagPage() {
               </div>
               {isIos && !canUseWebNfc && (
                 <>
-                  <h2 className="tag-page__status-title">Ready To Tag On iPhone</h2>
-                  <p className="tag-page__status-description">
-                    Place the top of your iPhone near the real NFC tag. The tag should open Land-in and continue the verification automatically.
-                  </p>
+                  <h2 className="tag-page__status-title">{t("tag.ios.ready.title")}</h2>
+                  <p className="tag-page__status-description">{t("tag.ios.ready.desc")}</p>
                   <div className="tag-page__platform-note">
-                    <p className="tag-page__status-description">
-                      There is no in-page scan button on iPhone because Safari does not expose Web NFC to websites.
-                    </p>
-                    <p className="tag-page__status-description">
-                      The physical NFC tag must open a Land-in URL like `/tag?tagUid=...` when tapped.
-                    </p>
+                    <p className="tag-page__status-description">{t("tag.ios.note1")}</p>
+                    <p className="tag-page__status-description">{t("tag.ios.note2")}</p>
                   </div>
                 </>
               )}
               {!(isIos && !canUseWebNfc) && (
                 <>
-              <h2 className="tag-page__status-title">인증 준비 완료</h2>
-              <p className="tag-page__status-description">
-                태그를 직접 읽거나, 테스트용 tag UID를 입력해 주세요.
-              </p>
+              <h2 className="tag-page__status-title">{t("tag.ready.title")}</h2>
+              <p className="tag-page__status-description">{t("tag.ready.desc")}</p>
               <input
                 className="tag-page__uid-input"
                 type="text"
-                placeholder="예: TAG-SEOUL-001"
+                placeholder={t("tag.ready.placeholder")}
                 value={tagUid}
                 onChange={(event) => setTagUid(event.target.value)}
               />
@@ -564,7 +489,7 @@ export default function TagPage() {
                 onClick={handleStartScan}
                 disabled={!tagUid.trim() || nfcReading}
               >
-                입력값으로 인증하기
+                {t("tag.ready.submit")}
               </button>
               {canUseWebNfc && (
                 <button
@@ -574,28 +499,22 @@ export default function TagPage() {
                   disabled={nfcReading}
                 >
                   <PhoneIcon className="tag-page__secondary-icon" />
-                  <span>{nfcReading ? "태그 읽는 중..." : "휴대폰으로 태그 읽기"}</span>
+                  <span>{nfcReading ? t("tag.ready.reading") : t("tag.ready.read_btn")}</span>
                 </button>
               )}
               {!canUseWebNfc && (
-                <p className="tag-page__status-description">
-                  이 브라우저에서는 직접 읽기를 지원하지 않아 테스트용 값 입력 방식만 사용할 수 있습니다.
-                </p>
+                <p className="tag-page__status-description">{t("tag.ready.no_nfc")}</p>
               )}
               {!canUseWebNfc && isIos && (
                 <div className="tag-page__platform-note">
-                  <p className="tag-page__status-description">
-                    iPhone Safari does not expose Web NFC to websites, so the in-page read button cannot be shown.
-                  </p>
-                  <p className="tag-page__status-description">
-                    To support iPhone, the NFC tag itself needs to open a Land-in URL like `/tag?tagUid=...` when tapped.
-                  </p>
+                  <p className="tag-page__status-description">{t("tag.ios.note1")}</p>
+                  <p className="tag-page__status-description">{t("tag.ios.note2")}</p>
                 </div>
               )}
                 </>
               )}
             </section>
-            {isIos && !canUseWebNfc ? <IosTagGuide /> : <VerificationGuide />}
+            {isIos && !canUseWebNfc ? <IosTagGuide t={t} /> : <VerificationGuide t={t} />}
           </>
         )}
 
@@ -604,8 +523,8 @@ export default function TagPage() {
             <div className="tag-page__icon-shell">
               <PhoneIcon className="tag-page__status-icon tag-page__status-icon--scan" />
             </div>
-            <h2 className="tag-page__status-title">NFC 인증 확인 중...</h2>
-            <p className="tag-page__status-description">태그 값: {tagUid}</p>
+            <h2 className="tag-page__status-title">{t("tag.scanning.title")}</h2>
+            <p className="tag-page__status-description">{t("tag.scanning.value")} {tagUid}</p>
           </section>
         )}
 
@@ -614,8 +533,8 @@ export default function TagPage() {
             <div className="tag-page__icon-shell is-success">
               <CheckIcon className="tag-page__status-icon tag-page__status-icon--success" />
             </div>
-            <h2 className="tag-page__status-title">방문 인증 완료</h2>
-            <p className="tag-page__status-description">NFT를 발행하고 있어요.</p>
+            <h2 className="tag-page__status-title">{t("tag.verified.title")}</h2>
+            <p className="tag-page__status-description">{t("tag.verified.desc")}</p>
           </section>
         )}
 
@@ -624,8 +543,8 @@ export default function TagPage() {
             <div className="tag-page__icon-shell">
               <SparklesIcon className="tag-page__status-icon tag-page__status-icon--mint" />
             </div>
-            <h2 className="tag-page__status-title">NFT 발행 중...</h2>
-            <p className="tag-page__status-description">컬렉션 보상을 준비하고 있습니다.</p>
+            <h2 className="tag-page__status-title">{t("tag.minting.title")}</h2>
+            <p className="tag-page__status-description">{t("tag.minting.desc")}</p>
           </section>
         )}
 
@@ -634,10 +553,10 @@ export default function TagPage() {
             <div className="tag-page__icon-shell">
               <PhoneIcon className="tag-page__status-icon" />
             </div>
-            <h2 className="tag-page__status-title">인증 실패</h2>
+            <h2 className="tag-page__status-title">{t("tag.error.title")}</h2>
             <p className="tag-page__status-description">{mintError}</p>
             <button type="button" className="tag-page__primary-button" onClick={resetToReady}>
-              다시 시도
+              {t("tag.error.retry")}
             </button>
           </section>
         )}
@@ -655,12 +574,12 @@ export default function TagPage() {
                 <div className="tag-page__mint-serial">#NFT</div>
               </div>
               <div className="tag-page__mint-copy">
-                <h2 className="tag-page__mint-title">축하합니다</h2>
-                <p className="tag-page__mint-subtitle">NFT 발행 완료</p>
+                <h2 className="tag-page__mint-title">{t("tag.minted.congrats")}</h2>
+                <p className="tag-page__mint-subtitle">{t("tag.minted.subtitle")}</p>
                 <p className="tag-page__mint-place">{mintedNft.name}</p>
                 <p className="tag-page__mint-location">{mintedNft.rarity}</p>
-                <p className="tag-page__status-description">{getMintStatusCopy(mintedNft).title}</p>
-                <p className="tag-page__status-description">{getMintStatusCopy(mintedNft).description}</p>
+                <p className="tag-page__status-description">{getMintStatusCopy(mintedNft, t).title}</p>
+                <p className="tag-page__status-description">{getMintStatusCopy(mintedNft, t).description}</p>
                 {mintedNft.transactionHash ? (
                   <a
                     className="tag-page__secondary-button"
@@ -668,7 +587,7 @@ export default function TagPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <span>View transaction</span>
+                    <span>{t("tag.minted.view_tx")}</span>
                   </a>
                 ) : null}
               </div>
@@ -679,11 +598,11 @@ export default function TagPage() {
                 className="tag-page__primary-button"
                 onClick={() => navigate(`/nft-gallery/${activeCollection.id}`)}
               >
-                컬렉션 보기
+                {t("tag.minted.view_collection")}
               </button>
               <button type="button" className="tag-page__secondary-button">
                 <ShareIcon className="tag-page__secondary-icon" />
-                <span>결과 공유</span>
+                <span>{t("tag.minted.share")}</span>
               </button>
             </div>
           </>

@@ -5,10 +5,8 @@ import rightArrowIcon from "../../../assets/icon/icon_right_arrow_w.png";
 import EventTagBadge from "../EventTagBadge/EventTagBadge";
 import IconImage from "../IconImage/IconImage";
 import PlaceImage from "../PlaceImage/PlaceImage";
-import { useLanguage } from "../../../contexts/useLanguage";
 
 export default function FeaturedEventCard({ event }) {
-  const { t } = useLanguage();
   const progressPercent = Math.round((event.collected / event.landmarkCount) * 100);
 
   return (
@@ -32,7 +30,7 @@ export default function FeaturedEventCard({ event }) {
 
           <span className="featured-event-card__timer">
             <IconImage src={clockIconW} size={12} />
-            <span>{t("event.daysLeft", { days: event.daysLeft })}</span>
+            <span>{event.daysLeft}일 남음</span>
           </span>
         </div>
 
@@ -47,14 +45,14 @@ export default function FeaturedEventCard({ event }) {
               />
             </div>
             <span className="featured-event-card__progress-text">
-              {t("event.collectedRatio", { collected: event.collected, total: event.landmarkCount })}
+              {event.collected}/{event.landmarkCount} 수집
             </span>
           </div>
 
           <div className="featured-event-card__footer">
-            <span className="featured-event-card__meta">{t("event.featuredAction")}</span>
+            <span className="featured-event-card__meta">루트 및 리워드 보기</span>
             <span className="featured-event-card__cta">
-              <span>{t("event.continue")}</span>
+              <span>이어하기</span>
               <IconImage src={rightArrowIcon} size={14} />
             </span>
           </div>

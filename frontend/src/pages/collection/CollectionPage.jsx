@@ -7,25 +7,34 @@ import CollectionFilterTabs from "../../components/common/CollectionFilterTabs/C
 import CollectionNftCard from "../../components/common/CollectionNftCard/CollectionNftCard";
 import CollectionOverviewCard from "../../components/common/CollectionOverviewCard/CollectionOverviewCard";
 import CollectionSummaryPanel from "../../components/common/CollectionSummaryPanel/CollectionSummaryPanel";
-import { useLanguage } from "../../contexts/useLanguage";
-
-const FILTER_IDS = ["all", "ongoing", "completed", "ended", "nft"];
+import { useLanguage } from "../../i18n/LanguageContext";
 
 export default function CollectionPage() {
-  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState("all");
   const [rawCollections, setRawCollections] = useState([]);
   const [rawNfts, setRawNfts] = useState([]);
+  const { t } = useLanguage();
+
+  const collectionFilters = [
+    { id: "all", label: t("collection.filter.all") },
+    { id: "ongoing", label: t("collection.filter.ongoing") },
+    { id: "completed", label: t("collection.filter.completed") },
+    { id: "ended", label: t("collection.filter.ended") },
+    { id: "nft", label: t("collection.filter.nft") },
+  ];
+
+  const filterDescriptions = {
+    all: t("collection.filter_desc.all"),
+    ongoing: t("collection.filter_desc.ongoing"),
+    completed: t("collection.filter_desc.completed"),
+    ended: t("collection.filter_desc.ended"),
+    nft: t("collection.filter_desc.nft"),
+  };
 
   useEffect(() => {
     collectionsApi.list().then((list) => setRawCollections(list ?? [])).catch(() => {});
     nftsApi.list().then((list) => setRawNfts(list ?? [])).catch(() => {});
   }, []);
-
-  const collectionFilters = useMemo(
-    () => FILTER_IDS.map((id) => ({ id, label: t(`collection.filters.${id}`) })),
-    [t],
-  );
 
   const nfts = rawNfts.map(adaptNft);
   const collections = rawCollections.map((c) => adaptCollection(c, rawNfts));
@@ -62,30 +71,28 @@ export default function CollectionPage() {
           <div className="collection-page__filters-scroller">
             <CollectionFilterTabs filters={collectionFilters} activeFilter={activeFilter} onChange={setActiveFilter} />
           </div>
-          <p className="collection-page__filter-description">
-            {t(`collection.filterDescriptions.${activeFilter}`)}
-          </p>
+          <p className="collection-page__filter-description">{filterDescriptions[activeFilter]}</p>
         </section>
 
         {isEmpty ? (
           <section className="collection-page__empty">
             <div className="collection-page__empty-icon" aria-hidden="true">✦</div>
             <h2 className="collection-page__empty-title">
-              {showNftList ? t("collection.emptyNftTitle") : t("collection.emptyCollectionTitle")}
+              {showNftList ? t("collection.empty.nft_title") : t("collection.empty.title")}
             </h2>
             <p className="collection-page__empty-description">
-              {showNftList ? t("collection.emptyNftDescription") : t("collection.emptyCollectionDescription")}
+              {showNftList ? t("collection.empty.nft_desc") : t("collection.empty.desc")}
             </p>
           </section>
         ) : showNftList ? (
-          <section className="collection-page__nft-section" aria-label={t("collection.nftListLabel")}>
-            <p className="collection-page__nft-caption">{t("collection.nftCaption", { count: nfts.length })}</p>
+          <section className="collection-page__nft-section" aria-label="NFT">
+            <p className="collection-page__nft-caption">{t("collection.nft_caption", { count: nfts.length })}</p>
             <div className="collection-page__nft-grid">
               {nfts.map((nft, i) => <CollectionNftCard key={nft.id} nft={nft} index={i} />)}
             </div>
           </section>
         ) : (
-          <section className="collection-page__collection-list" aria-label={t("collection.collectionListLabel")}>
+          <section className="collection-page__collection-list" aria-label={t("collection.title")}>
             {filteredCollections.map((c, i) => <CollectionOverviewCard key={c.id} collection={c} index={i} />)}
           </section>
         )}

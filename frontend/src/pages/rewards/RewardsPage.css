@@ -1,36 +1,77 @@
-/* Adds bottom spacing between the title and the subtitle below it */
 .rewards-page__title {
   margin-bottom: 6px;
 }
 
-.rewards-page__filters {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 6px;
+/* ── Points Card ─────────────────────── */
+.rewards-page__points-card {
+  padding: 18px 22px;
   border-radius: 22px;
   background: var(--color-surface);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-}
-
-.rewards-page__filter {
-  border: 0;
-  padding: 11px 8px;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-gray-500);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.rewards-page__filter.is-active {
-  background: var(--color-primary);
-  color: var(--color-surface);
-}
-
-.rewards-page__list {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.rewards-page__point-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.rewards-page__point-label {
+  color: var(--color-gray-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rewards-page__point-value {
+  color: var(--color-gray-900);
+  font-size: 13px;
+}
+
+.rewards-page__point-value strong {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* ── Filter Bar ──────────────────────── */
+.rewards-page__filter-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.rewards-page__select {
+  padding: 10px 14px;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.rewards-page__search {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-size: 13px;
+  color: var(--color-gray-900);
+  outline: none;
+}
+
+.rewards-page__search::placeholder {
+  color: var(--color-gray-400, #9ca3af);
+}
+
+/* ── Gallery Grid ────────────────────── */
+.rewards-page__gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-bottom: 24px;
 }

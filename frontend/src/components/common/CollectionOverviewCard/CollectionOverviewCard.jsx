@@ -8,7 +8,6 @@ import EventTagBadge from "../EventTagBadge/EventTagBadge";
 import IconImage from "../IconImage/IconImage";
 import PlaceImage from "../PlaceImage/PlaceImage";
 import ProgressBar from "../ProgressBar/ProgressBar";
-import { useLanguage } from "../../../contexts/useLanguage";
 
 function getRewardTone(status) {
   if (status === "completed") {
@@ -23,7 +22,6 @@ function getRewardTone(status) {
 }
 
 export default function CollectionOverviewCard({ collection, index = 0 }) {
-  const { t } = useLanguage();
   const isCompleted = collection.collectionStatus === "completed";
   const isEnded = collection.collectionStatus === "ended";
   const toneClassName = getRewardTone(collection.collectionStatus);
@@ -42,7 +40,7 @@ export default function CollectionOverviewCard({ collection, index = 0 }) {
       <Link
         to={`/event/${collection.id}`}
         className="collection-overview-card__hero-link"
-        aria-label={collection.title}
+        aria-label={`${collection.title} 상세 보기`}
       >
         <div className="collection-overview-card__hero">
           <PlaceImage
@@ -55,7 +53,7 @@ export default function CollectionOverviewCard({ collection, index = 0 }) {
 
           <div className="collection-overview-card__top">
             {isCompleted ? (
-              <div className="collection-overview-card__complete-chip">{t("event.completeAllChip")}</div>
+              <div className="collection-overview-card__complete-chip">전부 수집 완료</div>
             ) : (
               <div />
             )}
@@ -70,7 +68,7 @@ export default function CollectionOverviewCard({ collection, index = 0 }) {
             {collection.collectionStatus === "ongoing" && typeof collection.daysLeft === "number" && (
               <span className="collection-overview-card__days-left">
                 <IconImage src={clockIconW} size={11} />
-                <span>{t("event.daysLeft", { days: collection.daysLeft })}</span>
+                <span>{collection.daysLeft}일 남음</span>
               </span>
             )}
           </div>
@@ -92,10 +90,7 @@ export default function CollectionOverviewCard({ collection, index = 0 }) {
           />
           <div className="collection-overview-card__progress-meta">
             <span>
-              {t("event.collectedFraction", {
-                collected: collection.collected,
-                total: collection.landmarkCount,
-              })}
+              <strong>{collection.collected}</strong> / {collection.landmarkCount} 수집
             </span>
             <span>{collection.progressPercent}%</span>
           </div>
@@ -111,7 +106,7 @@ export default function CollectionOverviewCard({ collection, index = 0 }) {
           className={`collection-overview-card__cta ${toneClassName}`}
         >
           <IconImage src={bookPrimaryIcon} size={15} />
-          <span>{t("event.nftCollectionView")}</span>
+          <span>NFT 컬렉션 보기</span>
           <IconImage src={rightArrowIcon} size={14} />
         </Link>
       </div>

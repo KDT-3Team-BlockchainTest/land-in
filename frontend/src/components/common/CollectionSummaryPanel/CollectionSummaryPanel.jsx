@@ -1,5 +1,5 @@
 import "./CollectionSummaryPanel.css";
-import { useLanguage } from "../../../contexts/useLanguage";
+import { useLanguage } from "../../../i18n/LanguageContext";
 
 const summaryThemes = {
   ongoing: "collection-summary-panel__stat--ongoing",
@@ -19,10 +19,10 @@ function SummaryStat({ label, value, tone }) {
 export default function CollectionSummaryPanel({ ongoingCount, completedCount, nftCount }) {
   const { t } = useLanguage();
   return (
-    <section className="collection-summary-panel" aria-label={t("event.summaryLabel")}>
-      <SummaryStat label={t("event.summaryOngoing")} value={ongoingCount} tone="ongoing" />
-      <SummaryStat label={t("event.summaryCompleted")} value={completedCount} tone="completed" />
-      <SummaryStat label={t("event.summaryNfts")} value={nftCount} tone="nft" />
+    <section className="collection-summary-panel" aria-label={t("collection.title")}>
+      <SummaryStat label={t("collection.summary.ongoing")} value={ongoingCount} tone="ongoing" />
+      <SummaryStat label={t("collection.summary.completed")} value={completedCount} tone="completed" />
+      <SummaryStat label={t("collection.summary.nft")} value={nftCount} tone="nft" />
     </section>
   );
 }

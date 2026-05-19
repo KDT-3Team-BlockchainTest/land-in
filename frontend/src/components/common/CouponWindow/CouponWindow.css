@@ -1,0 +1,91 @@
+.coupon-window__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.coupon-window {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  background: var(--color-surface);
+  border-radius: 22px;
+  padding: 24px 20px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.coupon-window__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  color: var(--color-gray-600);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coupon-window__image-wrap {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.coupon-window__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.coupon-window__brand {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  margin-bottom: 2px;
+}
+
+.coupon-window__name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-gray-900);
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.coupon-window__barcode-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.coupon-window__barcode-svg {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.coupon-window__barcode-number {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  letter-spacing: 0.5px;
+  text-align: center;
+}

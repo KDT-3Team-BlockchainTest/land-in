@@ -1,6 +1,5 @@
 import "./EventRouteTimeline.css";
 import PlaceImage from "../PlaceImage/PlaceImage";
-import { useLanguage } from "../../../contexts/useLanguage";
 
 function RouteStepCard({ step, fallbackImage }) {
   const isCurrent = step.stepState === "current";
@@ -58,19 +57,20 @@ function RouteStepCard({ step, fallbackImage }) {
 }
 
 export default function EventRouteTimeline({ steps, fallbackImage }) {
-  const { t } = useLanguage();
   return (
     <section className="event-route-timeline">
       <div className="event-route-timeline__header">
         <div>
-          <h2 className="event-route-timeline__title">{t("event.routeTitle")}</h2>
-          <p className="event-route-timeline__description">{t("event.routeSubtitle")}</p>
+          <h2 className="event-route-timeline__title">방문 루트</h2>
+          <p className="event-route-timeline__description">
+            순서대로 방문하고 NFC 태그를 인증하세요
+          </p>
         </div>
 
         <div className="event-route-timeline__legend">
-          <span><i className="is-done" />{t("event.stepDone")}</span>
-          <span><i className="is-current" />{t("event.stepCurrent")}</span>
-          <span><i className="is-locked" />{t("event.stepLocked")}</span>
+          <span><i className="is-done" />완료</span>
+          <span><i className="is-current" />현재</span>
+          <span><i className="is-locked" />예정</span>
         </div>
       </div>
 
