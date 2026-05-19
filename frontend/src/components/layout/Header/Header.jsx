@@ -23,12 +23,13 @@ export default function Header() {
 
         <div className="app-header__actions">
           <button
-            type="button"
-            className="app-header__icon-button app-header__icon-button--globe"
-            aria-label="언어 선택"
-          >
-            <IconImage src={globeIcon} size={20} />
-          </button>
+  type="button"
+  className="app-header__icon-button app-header__icon-button--globe"
+  aria-label="언어 선택"
+  onClick={() => navigate("/settings/language")}
+>
+  <IconImage src={globeIcon} size={20} />
+</button>
         </div>
       </div>
     </header>

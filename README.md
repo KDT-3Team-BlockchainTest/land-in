@@ -1,222 +1,298 @@
-# Land In
+# Land-In
 
-NFC 태그로 랜드마크를 수집하고 NFT를 받는 여행 스탬프 플랫폼입니다.
+Land-In은 NFC 태그 인증으로 장소 방문 스텝을 완료하고 NFT/리워드를 발급하는 컬렉션 서비스입니다.
 
-```
-land_in_test/
-├── backend/          # Spring Boot API 서버
-├── frontend/         # React 웹 앱 (사용자)
-├── frontend-admin/   # React 웹 앱 (관리자)
-└── mobile/           # Expo React Native 앱 (Android/iOS)
-```
+이 저장소는 3개 실행 단위로 구성됩니다.
 
----
+- `backend`: Spring Boot API 서버
+- `frontend`: 사용자 모바일 웹 프론트
+- `frontend-admin`: 제휴사/관리자용 이벤트 관리 프론트
 
-## 사전 준비
+## 빠른 실행
 
-| 항목 | 버전 | 확인 방법 |
-|------|------|-----------|
-| Java | 21 | `java -version` |
-| Node.js | 18 이상 | `node -v` |
-| MySQL | 8.0 | `mysql --version` |
-| Expo Go | 최신 | Android / iOS 스토어 |
+새 컴퓨터에서 가장 간단한 실행 방법은 PowerShell 스크립트 1개를 실행하는 것입니다.
 
----
+**Windows (PowerShell / CMD)**
 
-## 1. Backend (Spring Boot)
-
-### 환경 설정
-
-`backend/src/main/resources/application-local.yml` 에서 DB 정보를 확인합니다.
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/landin_db
-    username: root
-    password: root
+```powershell
+git clone https://github.com/KDT-3Team-BlockchainTest/land-in.git
+cd land-in
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local.ps1
 ```
 
-MySQL에 DB를 먼저 생성합니다.
+**Ubuntu / Linux (PowerShell Core 필요)**
 
-```sql
-CREATE DATABASE landin_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```bash
+git clone https://github.com/KDT-3Team-BlockchainTest/land-in.git
+cd land-in
+pwsh -ExecutionPolicy Bypass -File ./scripts/start-local.ps1
 ```
 
-### 실행
+> Ubuntu에 PowerShell Core가 없으면 먼저 설치하세요.
+> ```bash
+> sudo snap install powershell --classic
+> ```
 
+스크립트가 하는 일:
+
+- `frontend`, `frontend-admin` 의존성 설치
+- Docker가 있고 로컬 MySQL이 없으면 `land-in-mysql` MySQL 컨테이너 자동 실행
+- 백엔드 실행
+- 사용자 프론트 실행
+- 관리자 프론트 실행
+- 실행 로그를 `.landin-runtime/logs`에 저장
+
+실행 후 접속 주소:
+
+```text
+백엔드 API:     http://localhost:8080
+사용자 프론트:  http://localhost:5173
+관리자 프론트:  http://localhost:5174
+```
+
+기본 관리자 계정:
+
+```text
+email: admin@landin.local
+password: admin1234!
+```
+
+## 빠른 실행 전 준비
+
+필수:
+
+- Git
+- Java 21
+- Node.js 20 이상
+- PowerShell Core (`pwsh`) — Ubuntu에서만 필요
+
+권장:
+
+- Docker Desktop
+
+Docker가 있으면 스크립트가 MySQL 8.4 컨테이너를 자동으로 띄웁니다. Docker가 없다면 로컬 MySQL을 직접 실행해야 합니다.
+
+기본 MySQL 설정:
+
+```text
+host: localhost
+port: 3306
+database: landin_db
+username: root
+password: 1234
+```
+
+로컬 MySQL 설정이 다르면 스크립트 실행 전에 환경변수를 지정합니다.
+
+Windows:
+```powershell
+$env:SPRING_DATASOURCE_URL="jdbc:mysql://localhost:3306/landin_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+$env:SPRING_DATASOURCE_USERNAME="root"
+$env:SPRING_DATASOURCE_PASSWORD="1234"
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local.ps1
+```
+
+Ubuntu:
+```bash
+export SPRING_DATASOURCE_URL="jdbc:mysql://localhost:3306/landin_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+export SPRING_DATASOURCE_USERNAME="root"
+export SPRING_DATASOURCE_PASSWORD="1234"
+pwsh -ExecutionPolicy Bypass -File ./scripts/start-local.ps1
+```
+
+이미 `node_modules`가 설치되어 있어 설치를 건너뛰고 싶으면:
+
+Windows:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local.ps1 -SkipInstall
+```
+
+Ubuntu:
+```bash
+pwsh -ExecutionPolicy Bypass -File ./scripts/start-local.ps1 -SkipInstall
+```
+
+Docker MySQL 자동 실행을 끄고 싶으면:
+
+Windows:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local.ps1 -NoDockerMySql
+```
+
+Ubuntu:
+```bash
+pwsh -ExecutionPolicy Bypass -File ./scripts/start-local.ps1 -NoDockerMySql
+```
+
+포트를 바꾸고 싶으면:
+
+Windows:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local.ps1 -BackendPort 8080 -FrontendPort 5173 -AdminPort 5174 -MysqlPort 3306
+```
+
+Ubuntu:
+```bash
+pwsh -ExecutionPolicy Bypass -File ./scripts/start-local.ps1 -BackendPort 8080 -FrontendPort 5173 -AdminPort 5174 -MysqlPort 3306
+```
+
+## 수동 실행
+
+스크립트 대신 직접 실행할 수도 있습니다.
+
+### 백엔드
+
+Windows:
+```powershell
+cd backend
+.\gradlew.bat bootRun
+```
+
+Ubuntu:
 ```bash
 cd backend
 ./gradlew bootRun
 ```
 
-Windows에서는:
+백엔드는 기본적으로 `local` 프로필로 실행되며 `http://localhost:8080`을 사용합니다.
 
+테스트:
+
+Windows:
+```powershell
+cd backend
+.\gradlew.bat test
+```
+
+Ubuntu:
 ```bash
 cd backend
-gradlew.bat bootRun
+./gradlew test
 ```
 
-서버가 뜨면 → `http://localhost:8080`
+### 사용자 프론트
 
-> 테이블은 `ddl-auto: update` 설정으로 자동 생성됩니다.
-
----
-
-## 2. Frontend — 사용자 웹
-
-### 환경 설정
-
-```bash
-cd frontend
-cp .env.example .env
-```
-
-`.env` 기본값은 `/api` (백엔드 프록시)이므로 별도 수정 없이 실행됩니다.
-
-### 실행
-
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-→ `http://localhost:5173`
+접속:
 
-### 빌드 (배포용)
+```text
+http://localhost:5173
+```
 
+검사/빌드 (Windows/Ubuntu 동일):
 ```bash
+cd frontend
+npm run lint
 npm run build
 ```
 
----
+### 관리자 프론트
 
-## 3. Frontend Admin — 관리자 웹
-
-```bash
+```powershell
 cd frontend-admin
 npm install
 npm run dev
 ```
 
-→ `http://localhost:5174`
+접속:
 
----
-
-## 4. Mobile (Expo / React Native)
-
-### 환경 설정
-
-```bash
-cd mobile
-npm install
-cp .env.example .env
+```text
+http://localhost:5174
 ```
 
-#### 폰과 PC가 같은 Wi-Fi인 경우
-
-PC IP 주소 확인 후 `.env` 수정:
-
-```
-# Windows: ipconfig / Mac: ifconfig
-EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:8080/api
-```
-
-Windows 방화벽 허용 (관리자 권한 터미널):
+빌드:
 
 ```powershell
-netsh advfirewall firewall add rule name="Backend 8080" dir=in action=allow protocol=TCP localport=8080
+cd frontend-admin
+npm run build
 ```
 
-#### 폰과 PC 네트워크가 다른 경우 (localtunnel)
+## 이미지 저장과 새 환경 주의사항
 
-터미널을 하나 더 열어서 백엔드 터널 실행:
+관리자 콘솔에서 업로드한 이미지는 기본적으로 백엔드 로컬 디렉터리 `backend/uploads`에 저장됩니다. 이 폴더는 Git에 포함되지 않습니다.
 
+따라서 다른 컴퓨터에서 새로 clone하면:
+
+- 소스 코드는 그대로 받을 수 있습니다.
+- DB 데이터는 새로 생성됩니다.
+- 업로드 이미지는 포함되지 않습니다.
+- 관리자 기본 계정으로 로그인한 뒤 이벤트, 스텝, 이미지, NFT, 리워드를 다시 등록해야 합니다.
+
+외부 접근 가능한 이미지 URL을 만들려면 백엔드 실행 시 `APP_PUBLIC_BASE_URL`을 설정합니다.
+
+```powershell
+$env:APP_PUBLIC_BASE_URL="http://localhost:8080"
+```
+
+## 이미지 필드 사용 기준
+
+관리자 콘솔에서 등록하는 이미지가 사용자 화면에 표시되는 위치는 다음과 같습니다.
+
+- 이벤트 기본 정보 `대표 이미지`: 홈 이벤트 카드, 이벤트 상세 히어로, 컬렉션 목록 카드 이미지
+- 스텝 `장소 이미지 URL`: 이벤트 상세의 방문 루트 장소 이미지
+- 스텝 `NFT 이미지 URL`: NFC 인증 후 발급되는 NFT 이미지, 컬렉션 NFT 카드 이미지
+
+스텝을 저장하려면 장소 이미지와 NFT 이미지가 각각 필요합니다.
+
+## 주요 API
+
+- 사용자 인증: `/api/auth/signup`, `/api/auth/login`, `/api/auth/me`
+- 이벤트 조회/참여: `/api/events`, `/api/events/{eventId}`, `/api/events/{eventId}/join`
+- NFC 인증: `/api/nfc/verify`
+- NFT 조회/메타데이터: `/api/nfts`, `/api/nfts/{nftId}`, `/api/nfts/{nftId}/metadata`
+- 리워드 조회: `/api/rewards`
+- 관리자 인증: `/api/admin/auth/login`, `/api/admin/auth/me`
+- 관리자 이벤트 관리: `/api/admin/events`
+- 관리자 이미지 업로드: `/api/admin/uploads/images`
+
+## 블록체인 설정
+
+기본값은 온체인 민팅 비활성화입니다.
+
+```text
+BLOCKCHAIN_ENABLED=false
+```
+
+온체인 민팅을 켜려면 백엔드 실행 환경에 관련 환경변수를 설정합니다.
+
+```powershell
+$env:BLOCKCHAIN_ENABLED="true"
+$env:BLOCKCHAIN_RPC_URL="https://rpc.hoodi.ethpandaops.io"
+$env:BLOCKCHAIN_CHAIN_ID="560048"
+$env:BLOCKCHAIN_CONTRACT_ADDRESS="0x..."
+$env:BLOCKCHAIN_MINTER_PRIVATE_KEY="..."
+```
+
+## 커밋 전 검증 명령
+
+Windows:
+```powershell
+cd backend
+.\gradlew.bat test
+
+cd ..\frontend
+npm run lint
+npm run build
+
+cd ..\frontend-admin
+npm run build
+```
+
+Ubuntu:
 ```bash
-npx localtunnel --port 8080
-# 출력된 URL 복사: your url is: https://xxxx.loca.lt
+cd backend
+./gradlew test
+
+cd ../frontend
+npm run lint
+npm run build
+
+cd ../frontend-admin
+npm run build
 ```
 
-`.env` 수정:
-
-```
-EXPO_PUBLIC_API_BASE_URL=https://xxxx.loca.lt/api
-```
-
-> ⚠️ localtunnel은 재시작하면 URL이 바뀝니다.
-
-### 개발 서버 실행
-
-```bash
-# 같은 Wi-Fi
-npx expo start --clear
-(한 번 하고 나서 --clear 없이 입력)
-
-# 네트워크가 다를 때
-npx expo start --clear --tunnel
-(한 번 하고 나서 --clear 없이 입력)
-```
-
-QR 코드를 **Expo Go** 앱으로 스캔합니다.
-
-### 빌드 (실기기 APK)
-## 이미 업로드 되어 있음. 안해도 됨.
-```bash
-npm install -g eas-cli
-eas login
-eas build --platform android --profile preview
-```
-
-### 빌드 (스토어 출시)
-
-```bash
-eas build --platform android --profile production
-eas submit --platform android
-```
-
----
-
-## 전체 동시 실행 순서
-
-```
-1. MySQL 실행
-2. backend    → ./gradlew bootRun
-3. frontend   → npm run dev          (http://localhost:5173)
-4. frontend-admin → npm run dev      (http://localhost:5174)
-5. mobile     → npx expo start --clear [--tunnel]
-```
-
----
-
-## 주요 API 엔드포인트
-
-| 경로 | 설명 |
-|------|------|
-| `POST /api/auth/signup` | 회원가입 |
-| `POST /api/auth/login` | 로그인 |
-| `GET  /api/events` | 이벤트 목록 |
-| `POST /api/nfc/verify` | NFC 태그 인증 → NFT 발행 |
-| `GET  /api/collections` | 내 컬렉션 |
-| `GET  /api/rewards` | 리워드 목록 |
-| `GET  /api/dashboard/stats` | 여행 통계 |
-
----
-
-## 자주 발생하는 문제
-
-### 백엔드가 안 뜰 때
-- MySQL이 실행 중인지 확인: `landin_db` DB가 존재해야 합니다.
-- Java 21인지 확인: `java -version`
-
-### 모바일에서 Network Error
-- `.env`의 IP 주소가 현재 PC IP와 맞는지 확인
-- 같은 Wi-Fi 연결 후 방화벽 8080 허용, 또는 localtunnel 사용
-
-### Expo QR 스캔 후 연결 실패
-```bash
-npx expo start --clear --tunnel
-```
-
-### NFC가 작동하지 않음
-- Expo Go에서는 NFC 미지원 → EAS 빌드로 APK 설치 필요

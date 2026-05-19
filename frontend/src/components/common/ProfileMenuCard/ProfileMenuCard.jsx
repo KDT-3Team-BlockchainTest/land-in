@@ -1,11 +1,13 @@
 import "./ProfileMenuCard.css";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileMenuCard({ items }) {
+  const navigate = useNavigate();
   return (
     <section className="profile-menu-card">
       {items.map((item, index) => (
         <div key={item.id}>
-          <button type="button" className="profile-menu-card__item">
+          <button type="button" className="profile-menu-card__item" onClick={() => item.to && navigate(item.to)}>
             <span className="profile-menu-card__emoji" aria-hidden="true">
               {item.emoji}
             </span>

@@ -10,10 +10,14 @@ import FeaturedEventCard from '../components/home/FeaturedEventCard';
 import UpcomingEventCard from '../components/home/UpcomingEventCard';
 import EmptyState from '../components/common/EmptyState';
 import SectionHeader from '../components/common/SectionHeader';
+import { LinearGradient } from 'expo-linear-gradient';
+import AppHeader from '../components/layout/AppHeader';
+import { useLanguage } from '../contexts/useLanguage';
 import { colors, radius, shadow, typography } from '../theme';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [featured, setFeatured] = useState([]);
   const [active, setActive] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
@@ -29,13 +33,21 @@ export default function HomeScreen({ navigation }) {
         eventsApi.listRaw('upcoming').catch(() => []),
         eventsApi.joinedIds().catch(() => []),
       ]);
+      // 백엔드는 string[] 반환 (e.g. ["jeju-summer-2026"])
       const joinedIds = (joined || []).map((item) =>
-        typeof item === 'number' ? item : item?.id
+        item !== null && typeof item === 'object' ? item.id : String(item)
       ).filter(Boolean);
 
       setJoinedCount(joinedIds.length);
       setFeatured((f || []).map((ev) => adaptEventSummary(ev, joinedIds)));
-      setActive((a || []).map((ev) => adaptEventSummary(ev, joinedIds)));
+      // 추천(featured) 이벤트를 리스트 맨 앞으로 정렬
+      const activeArr = (a || []).map((ev) => adaptEventSummary(ev, joinedIds));
+      activeArr.sort((x, y) => {
+        if (x.tag === 'featured' && y.tag !== 'featured') return -1;
+        if (y.tag === 'featured' && x.tag !== 'featured') return 1;
+        return 0;
+      });
+      setActive(activeArr);
       setUpcoming((u || []).map((ev) => adaptEventSummary(ev, joinedIds)));
     } finally {
       setLoading(false);
@@ -51,7 +63,7 @@ export default function HomeScreen({ navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
         <ActivityIndicator style={{ marginTop: 80 }} size="large" color={colors.primary} />
       </SafeAreaView>
     );
@@ -60,46 +72,50 @@ export default function HomeScreen({ navigation }) {
   const featuredEvent = featured[0] || active[0];
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <AppHeader />
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.logo}>Land In</Text>
-            <Text style={styles.greeting}>안녕하세요, {user?.displayName || '게스트'}님 👋</Text>
-          </View>
-          <TouchableOpacity onPress={() => navigation.navigate('MyProgress')}>
-            <Ionicons name="stats-chart-outline" size={24} color={colors.gray600} />
-          </TouchableOpacity>
+        {/* 인사말 */}
+        <View style={styles.greeting}>
+          <Text style={styles.greetingText}>
+            {t('home.greeting')} <Text style={styles.greetingName}>{user?.displayName || t('home.traveler')}</Text>.
+          </Text>
+          <Text style={styles.greetingTitle}>{t('home.title')}</Text>
         </View>
 
-        {/* 진행 현황 배너 (웹 ProgressBanner와 동일) */}
+        {/* 진행 현황 배너 */}
         {joinedCount > 0 && (
           <TouchableOpacity
             style={styles.progressBanner}
             onPress={() => navigation.navigate('MyProgress')}
             activeOpacity={0.85}
           >
-            <View style={styles.progressBannerLeft}>
-              <Ionicons name="navigate-outline" size={18} color={colors.primary} />
-              <View>
-                <Text style={styles.progressBannerTitle}>현재 진행 현황</Text>
-                <Text style={styles.progressBannerDesc}>
-                  현재 {joinedCount}개의 루트를 탐험 중입니다.
-                </Text>
-              </View>
+            <LinearGradient
+              colors={['#fe6b70', '#ff9a6c']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={styles.progressIcon}
+            >
+              <Ionicons name="sparkles" size={18} color="#fff" />
+            </LinearGradient>
+            <View style={styles.progressBannerContent}>
+              <Text style={styles.progressBannerTitle}>{t('homeExtra.progressBannerTitle')}</Text>
+              <Text style={styles.progressBannerDesc}>
+                {t('homeExtra.progressBannerDesc', { count: joinedCount })}
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+            <View style={styles.progressArrow}>
+              <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+            </View>
           </TouchableOpacity>
         )}
 
         {/* 추천 이벤트 */}
         {featuredEvent && (
           <View style={styles.section}>
-            <SectionHeader title="🌟 추천 루트" />
+            <SectionHeader title={t('home.featuredTitle')} description={t('home.featuredDescription')} />
             <FeaturedEventCard event={featuredEvent} onPress={() => goDetail(featuredEvent.id)} />
           </View>
         )}
@@ -107,7 +123,7 @@ export default function HomeScreen({ navigation }) {
         {/* 진행중 이벤트 */}
         {active.length > 0 && (
           <View style={styles.section}>
-            <SectionHeader title="진행중인 이벤트" action="전체 보기" onAction={() => navigation.navigate('Collection')} />
+            <SectionHeader title={t('home.activeTitle')} action={t('home.activeAction')} onAction={() => navigation.navigate('Collection')} />
             <FlatList
               data={active}
               keyExtractor={(item) => String(item.id)}
@@ -117,6 +133,7 @@ export default function HomeScreen({ navigation }) {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.hList}
+              style={styles.hListWrapper}
               ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             />
           </View>
@@ -125,7 +142,12 @@ export default function HomeScreen({ navigation }) {
         {/* 예정 이벤트 */}
         {upcoming.length > 0 && (
           <View style={[styles.section, { marginBottom: 32 }]}>
-            <SectionHeader title="곧 시작하는 이벤트" />
+            <SectionHeader
+              title={t('home.upcomingTitle')}
+              description={t('home.upcomingDescription')}
+              action={t('home.upcomingAction')}
+              onAction={() => {}}
+            />
             {upcoming.slice(0, 4).map((ev) => (
               <UpcomingEventCard key={ev.id} event={ev} onPress={() => goDetail(ev.id)} />
             ))}
@@ -133,7 +155,7 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {!featuredEvent && active.length === 0 && upcoming.length === 0 && (
-          <EmptyState icon="calendar-outline" title="진행중인 이벤트가 없습니다" subtitle="새 이벤트를 기다려주세요!" />
+          <EmptyState icon="calendar-outline" title={t('homeExtra.noEvents')} subtitle={t('homeExtra.noEventsDesc')} />
         )}
       </ScrollView>
     </SafeAreaView>
@@ -142,23 +164,30 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20,
-  },
-  logo: { fontSize: 22, fontWeight: '800', color: colors.primary },
-  greeting: { ...typography.caption, marginTop: 2 },
+  greeting: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 },
+  greetingText: { fontSize: 13, color: colors.gray400, lineHeight: 18, marginBottom: 4 },
+  greetingName: { color: colors.primary, fontWeight: '600' },
+  greetingTitle: { ...typography.h1 },
   progressBanner: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', gap: 12,
     marginHorizontal: 20, marginBottom: 20,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.md, padding: 14,
-    borderLeftWidth: 3, borderLeftColor: colors.primary,
-    ...shadow.card,
+    backgroundColor: 'rgba(254,107,112,0.06)',
+    borderRadius: 18, padding: 16,
+    borderWidth: 1.5, borderColor: 'rgba(254,107,112,0.18)',
   },
-  progressBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  progressBannerTitle: { fontSize: 12, fontWeight: '700', color: colors.primary, marginBottom: 2 },
-  progressBannerDesc: { fontSize: 13, color: colors.gray600 },
+  progressIcon: {
+    width: 44, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  progressBannerContent: { flex: 1, gap: 2 },
+  progressBannerTitle: { fontSize: 14, fontWeight: '700', color: colors.gray900 },
+  progressBannerDesc: { fontSize: 12, color: colors.gray500, lineHeight: 17 },
+  progressArrow: {
+    width: 32, height: 32, borderRadius: 10,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
   section: { paddingHorizontal: 20, marginBottom: 28 },
+  hListWrapper: { overflow: 'visible', paddingVertical: 6 },
   hList: { paddingRight: 4 },
 });

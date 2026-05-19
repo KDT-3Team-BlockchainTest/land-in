@@ -65,14 +65,28 @@ function Start-LoggedProcess {
 
     $stdout = Join-Path $LogDir "$Name.out.log"
     $stderr = Join-Path $LogDir "$Name.err.log"
-    $process = Start-Process `
-        -FilePath $FilePath `
-        -ArgumentList $ArgumentList `
-        -WorkingDirectory $WorkingDirectory `
-        -RedirectStandardOutput $stdout `
-        -RedirectStandardError $stderr `
-        -WindowStyle Hidden `
-        -PassThru
+
+    $resolvedPath = $FilePath
+    if (-not [System.IO.Path]::IsPathRooted($FilePath)) {
+        $candidate = Join-Path $WorkingDirectory $FilePath
+        if (Test-Path $candidate) {
+            $resolvedPath = (Resolve-Path $candidate).Path
+        } else {
+            $cmd = Get-Command $FilePath -ErrorAction SilentlyContinue
+            if ($cmd) { $resolvedPath = $cmd.Source }
+        }
+    }
+
+    $startParams = @{
+        FilePath             = $resolvedPath
+        ArgumentList         = $ArgumentList
+        WorkingDirectory     = $WorkingDirectory
+        RedirectStandardOutput = $stdout
+        RedirectStandardError  = $stderr
+        PassThru             = $true
+    }
+    if ($env:OS -eq "Windows_NT") { $startParams['WindowStyle'] = 'Hidden' }
+    $process = Start-Process @startParams
 
     Set-Content -Path (Join-Path $RuntimeDir "$Name.pid") -Value $process.Id
     Write-Host "Started $Name (PID $($process.Id)); logs: $stdout"
@@ -85,10 +99,43 @@ function Ensure-Tool {
     }
 }
 
+function Ensure-JavaOnPath {
+    if (Test-Command "java") { return }
+
+    $candidates = @()
+    if ($env:JAVA_HOME) { $candidates += $env:JAVA_HOME }
+    $searchRoots = @(
+        "C:\Program Files\Eclipse Adoptium",
+        "C:\Program Files\Java",
+        "C:\Program Files\Microsoft",
+        "C:\Program Files\Zulu",
+        "$env:LOCALAPPDATA\Programs\Eclipse Adoptium"
+    )
+    foreach ($root in $searchRoots) {
+        if (Test-Path $root) {
+            $candidates += Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -match "jdk-?2[1-9]" } |
+                Sort-Object Name -Descending |
+                ForEach-Object { $_.FullName }
+        }
+    }
+
+    foreach ($javaHome in $candidates) {
+        $javaBin = Join-Path $javaHome "bin"
+        if (Test-Path (Join-Path $javaBin "java.exe")) {
+            $env:JAVA_HOME = $javaHome
+            $env:Path = "$javaBin;$env:Path"
+            Write-Host "Using JAVA_HOME: $javaHome"
+            return
+        }
+    }
+}
+
 Write-Host "Land-In local stack startup"
 Write-Host "Workspace: $Root"
 
-Ensure-Tool "java" "Install Java 21 and make sure java is on PATH."
+Ensure-JavaOnPath
+Ensure-Tool "java" "Install Java 21 and make sure java is on PATH (or set JAVA_HOME)."
 Ensure-Tool "node" "Install Node.js 20+ and make sure node is on PATH."
 Ensure-Tool "npm" "Install Node.js 20+ and make sure npm is on PATH."
 
@@ -137,9 +184,16 @@ $env:SPRING_DATASOURCE_PASSWORD = if ($env:SPRING_DATASOURCE_PASSWORD) { $env:SP
 $env:APP_PUBLIC_BASE_URL = if ($env:APP_PUBLIC_BASE_URL) { $env:APP_PUBLIC_BASE_URL } else { "http://localhost:$BackendPort" }
 $env:PORT = "$BackendPort"
 
-$isWindows = ($env:OS -eq "Windows_NT")
-$gradleFile = if ($isWindows) { ".\gradlew.bat" } else { "./gradlew" }
-$npmFile = if ($isWindows) { "npm.cmd" } else { "npm" }
+$runningOnWindows = ($env:OS -eq "Windows_NT")
+$gradleFile = if ($runningOnWindows) { ".\gradlew.bat" } else { "./gradlew" }
+$npmFile = if ($runningOnWindows) { "npm.cmd" } else { "npm" }
+
+if (-not $runningOnWindows) {
+    $gradlewPath = Join-Path $Root "backend/gradlew"
+    if (Test-Path $gradlewPath) {
+        & chmod +x $gradlewPath | Out-Null
+    }
+}
 
 if (-not (Test-Port $BackendPort)) {
     Start-LoggedProcess `
@@ -172,7 +226,7 @@ if (-not (Test-Port $AdminPort)) {
 }
 
 Write-Host "Waiting for services..."
-$backendReady = Wait-Http "http://127.0.0.1:$BackendPort/api/events" 120
+$backendReady = Wait-Http "http://127.0.0.1:$BackendPort/api/admin/auth/me" 120
 $frontendReady = Wait-Http "http://127.0.0.1:$FrontendPort/" 60
 $adminReady = Wait-Http "http://127.0.0.1:$AdminPort/" 60
 

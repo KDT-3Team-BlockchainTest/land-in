@@ -1,6 +1,12 @@
+const _apiBase = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080/api').replace(/\/api\/?$/, '');
+function fixUrl(url) {
+  if (!url) return null;
+  return url.replace(/^http:\/\/localhost(:\d+)?/, _apiBase);
+}
+
 const COUNTRY_FLAGS = {
   France: '🇫🇷', '프랑스': '🇫🇷',
-  'South Korea': '🇰🇷', Korea: '🇰🇷', '한국': '🇰🇷',
+  'South Korea': '🇰🇷', Korea: '🇰🇷', '한국': '🇰🇷', '대한민국': '🇰🇷',
   Japan: '🇯🇵', '일본': '🇯🇵',
   Italy: '🇮🇹', '이탈리아': '🇮🇹',
   USA: '🇺🇸', 'United States': '🇺🇸', '미국': '🇺🇸',
@@ -11,7 +17,7 @@ const COUNTRY_FLAGS = {
   Thailand: '🇹🇭', '태국': '🇹🇭',
 };
 
-function toFlag(country) { return COUNTRY_FLAGS[country] ?? '🌏'; }
+function toFlag(country) { return COUNTRY_FLAGS[country] ?? null; }
 function formatDate(d) { return d ? d.replace(/-/g, '. ') : ''; }
 function daysLeft(end) {
   if (!end) return 0;
@@ -44,12 +50,13 @@ export function adaptEventSummary(ev, joinedIds = []) {
     daysLeft: daysLeft(ev.endDate),
     daysUntilOpen: daysUntil(ev.startDate),
     landmarkCount: ev.totalSteps,
-    image: ev.heroImageUrl,
+    image: fixUrl(ev.heroImageUrl),
     tag: ev.featured ? 'featured' : ev.status?.toLowerCase(),
     status: ev.status?.toLowerCase(),
     themeColor: ev.themeColor || '#fe6b70',
     partnerName: ev.partnerName,
     rewardTitle: ev.rewardTitle || '컬렉션 완성 리워드',
+    rewardLabel: ev.partnerName ? `${ev.partnerName} 혜택` : (ev.rewardTitle || '컬렉션 완성 리워드'),
     rewardDescription: ev.rewardDescription || '컬렉션 완성 시 특별 리워드가 지급됩니다.',
     highlights: ev.partnerName
       ? [`${ev.partnerName} 파트너 혜택`, `${ev.totalSteps}개 랜드마크`]
@@ -71,8 +78,8 @@ export function adaptEventDetail(ev) {
     daysLeft: daysLeft(ev.endDate),
     landmarkCount: ev.totalSteps,
     collected: ev.completedSteps ?? 0,
-    image: ev.heroImageUrl,
-    mapImageUrl: ev.mapImageUrl,
+    image: fixUrl(ev.heroImageUrl),
+    mapImageUrl: fixUrl(ev.mapImageUrl),
     description: ev.description,
     tag: ev.featured ? 'featured' : ev.status?.toLowerCase(),
     status: ev.status?.toLowerCase(),
@@ -97,10 +104,10 @@ export function adaptStep(step) {
     id: step.id,
     title: step.placeName,
     subtitle: step.placeDescription ? `@ ${step.placeDescription}` : '',
-    image: step.imageUrl,
+    image: fixUrl(step.imageUrl),
     stepState: step.state?.toLowerCase() ?? 'locked',
     nft: step.nftName
-      ? { name: step.nftName, image: step.nftImageUrl, rarity: step.nftRarity?.toLowerCase() }
+      ? { name: step.nftName, image: fixUrl(step.nftImageUrl), rarity: step.nftRarity?.toLowerCase() }
       : null,
     isFinalStep: step.finalStep,
   };
@@ -117,7 +124,7 @@ export function adaptCollection(col) {
     flag: toFlag(col.country),
     period: `${formatDate(col.startDate)} - ${formatDate(col.endDate)}`,
     daysLeft: daysLeft(col.endDate),
-    image: col.heroImageUrl,
+    image: fixUrl(col.heroImageUrl),
     themeColor: col.themeColor || '#fe6b70',
     accentColor: cfg.color,
     collectionStatus: col.collectionStatus?.toLowerCase(),
@@ -136,7 +143,7 @@ export function adaptNft(nft) {
     id: nft.id,
     name: nft.name,
     placeName: nft.stepPlaceName || nft.name,
-    image: nft.imageUrl,
+    image: fixUrl(nft.imageUrl),
     serial: `#${String(nft.id).slice(0, 6).toUpperCase()}`,
     rarity: nft.rarity?.toLowerCase(),
     eventId: nft.eventId,

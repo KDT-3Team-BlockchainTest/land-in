@@ -7,16 +7,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { rewardsApi } from '../api/rewards';
 import EmptyState from '../components/common/EmptyState';
+import AppHeader from '../components/layout/AppHeader';
+import { useLanguage } from '../contexts/useLanguage';
 import { colors, radius, shadow, typography } from '../theme';
 
-const FILTERS = [
-  { label: '전체', value: undefined },
-  { label: '사용 가능', value: 'available' },
-  { label: '사용됨', value: 'used' },
-  { label: '만료됨', value: 'expired' },
-];
-
-function RewardCodeModal({ reward, onClose }) {
+function RewardCodeModal({ reward, onClose, t }) {
   return (
     <Modal visible={!!reward} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
@@ -26,23 +21,23 @@ function RewardCodeModal({ reward, onClose }) {
           {reward?.collectionName && <Text style={styles.modalCollection}>{reward.collectionName}</Text>}
           {reward?.couponCode && (
             <View style={styles.codeBox}>
-              <Text style={styles.codeLabel}>쿠폰 코드</Text>
+              <Text style={styles.codeLabel}>{t('reward.couponLabel')}</Text>
               <Text style={styles.codeText}>{reward.couponCode}</Text>
             </View>
           )}
           {reward?.howToUse && (
             <View style={styles.howToUseBox}>
-              <Text style={styles.howToUseLabel}>사용 방법</Text>
+              <Text style={styles.howToUseLabel}>{t('reward.modalHowToUse')}</Text>
               <Text style={styles.howToUseText}>{reward.howToUse}</Text>
             </View>
           )}
           {reward?.validUntil && (
             <Text style={styles.validUntil}>
-              유효기간: {new Date(reward.validUntil).toLocaleDateString('ko-KR')}
+              {t('reward.validUntil')}: {new Date(reward.validUntil).toLocaleDateString('ko-KR')}
             </Text>
           )}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>닫기</Text>
+            <Text style={styles.closeBtnText}>{t('reward.modalClose')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -50,7 +45,7 @@ function RewardCodeModal({ reward, onClose }) {
   );
 }
 
-function RewardCard({ item, onUse, onView }) {
+function RewardCard({ item, onUse, onView, t }) {
   const available = item.status === 'available';
   const color = item.accentColor || colors.primary;
   return (
@@ -64,8 +59,8 @@ function RewardCard({ item, onUse, onView }) {
         {item.validUntil && available && (
           <Text style={styles.expiry}>~{new Date(item.validUntil).toLocaleDateString('ko-KR')}</Text>
         )}
-        {item.status === 'used' && <Text style={styles.usedLabel}>사용 완료</Text>}
-        {item.status === 'expired' && <Text style={styles.expiredLabel}>기간 만료</Text>}
+        {item.status === 'used' && <Text style={styles.usedLabel}>{t('reward.statusUsed')}</Text>}
+        {item.status === 'expired' && <Text style={styles.expiredLabel}>{t('reward.statusExpired')}</Text>}
       </View>
       {available && (
         <TouchableOpacity
@@ -73,7 +68,7 @@ function RewardCard({ item, onUse, onView }) {
           onPress={() => onUse(item)}
           activeOpacity={0.85}
         >
-          <Text style={styles.useBtnText}>사용</Text>
+          <Text style={styles.useBtnText}>{t('rewardsExtra.useBtn')}</Text>
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -81,6 +76,13 @@ function RewardCard({ item, onUse, onView }) {
 }
 
 export default function RewardsScreen() {
+  const { t } = useLanguage();
+  const FILTERS = [
+    { label: t('rewardsExtra.allFilter'), value: undefined },
+    { label: t('rewards.filters.available'), value: 'available' },
+    { label: t('rewardsExtra.usedFilter'), value: 'used' },
+    { label: t('rewardsExtra.expiredFilter'), value: 'expired' },
+  ];
   const [filter, setFilter] = useState(undefined);
   const [rewards, setRewards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,25 +101,26 @@ export default function RewardsScreen() {
   const onRefresh = useCallback(() => { setRefreshing(true); load(filter); }, [filter, load]);
 
   const handleUse = useCallback((item) => {
-    Alert.alert('리워드 사용', `"${item.title}"을(를) 사용하시겠습니까?`, [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('rewardsExtra.modalTitle'), t('rewardsExtra.modalConfirm', { title: item.title }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '사용하기',
+        text: t('rewardsExtra.useBtn'),
         onPress: async () => {
           try {
             await rewardsApi.use(item.id);
             load(filter);
           } catch (err) {
-            Alert.alert('오류', err.message || '사용에 실패했습니다.');
+            Alert.alert(t('rewardsExtra.errorTitle'), err.message || t('rewardsExtra.useError'));
           }
         },
       },
     ]);
-  }, [load, filter]);
+  }, [load, filter, t]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <Text style={styles.pageTitle}>리워드</Text>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <AppHeader />
+      <Text style={styles.pageTitle}>{t('rewards.title')}</Text>
       <View style={styles.filterRow}>
         {FILTERS.map((f) => (
           <TouchableOpacity
@@ -136,15 +139,15 @@ export default function RewardsScreen() {
           <FlatList
             data={rewards}
             keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => <RewardCard item={item} onUse={handleUse} onView={setViewing} />}
+            renderItem={({ item }) => <RewardCard item={item} onUse={handleUse} onView={setViewing} t={t} />}
             contentContainerStyle={styles.list}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-            ListEmptyComponent={<EmptyState icon="gift-outline" title="리워드가 없습니다" subtitle="이벤트를 완료하면 리워드를 받을 수 있어요" />}
+            ListEmptyComponent={<EmptyState icon="gift-outline" title={t('rewards.emptyTitle')} subtitle={t('rewards.emptyDescription')} />}
           />
         )
       }
 
-      <RewardCodeModal reward={viewing} onClose={() => setViewing(null)} />
+      <RewardCodeModal reward={viewing} onClose={() => setViewing(null)} t={t} />
     </SafeAreaView>
   );
 }

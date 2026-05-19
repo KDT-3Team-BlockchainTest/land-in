@@ -1,90 +1,117 @@
 import "./RewardsPage.css";
-import { useEffect, useMemo, useState } from "react";
-import { adaptReward } from "../../api/adapters";
-import { rewardsApi } from "../../api/rewards";
-import EmptyState from "../../components/common/EmptyState/EmptyState";
-import RewardCodeModal from "../../components/common/RewardCodeModal/RewardCodeModal";
-import RewardCouponCard from "../../components/common/RewardCouponCard/RewardCouponCard";
-import StatSummaryGrid from "../../components/common/StatSummaryGrid/StatSummaryGrid";
+import { useState } from "react";
+import Coupon from "../../components/common/Coupon/Coupon.jsx";
+import CouponWindow from "../../components/common/CouponWindow/CouponWindow.jsx";
+import { useLanguage } from "../../i18n/LanguageContext";
 
-const rewardFilters = [
-  { id: "available", label: "사용 가능" },
-  { id: "used", label: "사용 완료" },
-  { id: "expired", label: "만료" },
+const dummyCoupons = [
+  {
+    id: 1,
+    brand: "버거킹",
+    name: "불고기와퍼+콜라L+21치즈스틱",
+    image: "/burger-coupon.jpeg",
+    barcode: "1 234 5678 9101 1121 3141 5161",
+  },
+  {
+    id: 2,
+    brand: "버거킹",
+    name: "불고기와퍼+콜라L+21치즈스틱",
+    image: "https://via.placeholder.com/200x200.png?text=Burger+2",
+    barcode: "2 345 6789 0123 4567 8901 2345",
+  },
+  {
+    id: 3,
+    brand: "버거킹",
+    name: "치킨버거+콜라M",
+    image: "https://via.placeholder.com/200x200.png?text=Burger+3",
+    barcode: "3 456 7890 1234 5678 9012 3456",
+  },
+  {
+    id: 4,
+    brand: "스타벅스",
+    name: "아이스 아메리카노 T",
+    image: "https://via.placeholder.com/200x200.png?text=Coffee+1",
+    barcode: "4 567 8901 2345 6789 0123 4567",
+  },
+  {
+    id: 5,
+    brand: "GS25",
+    name: "모바일 상품권 5000원",
+    image: "https://via.placeholder.com/200x200.png?text=Gift+1",
+    barcode: "5 678 9012 3456 7890 1234 5678",
+  },
+  {
+    id: 6,
+    brand: "CU",
+    name: "삼각김밥 2개 교환권",
+    image: "https://via.placeholder.com/200x200.png?text=Gift+2",
+    barcode: "6 789 0123 4567 8901 2345 6789",
+  },
 ];
 
 export default function RewardsPage() {
-  const [activeFilter, setActiveFilter] = useState("available");
-  const [selectedReward, setSelectedReward] = useState(null);
-  const [rawRewards, setRawRewards] = useState([]);
+  const { t } = useLanguage();
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [searchText, setSearchText] = useState("");
 
-  useEffect(() => {
-    rewardsApi.list().then((list) => setRawRewards(list ?? [])).catch(() => {});
-  }, []);
-
-  const rewards = rawRewards.map(adaptReward);
-  const filteredRewards = useMemo(
-    () => rewards.filter((r) => r.status === activeFilter),
-    [rewards, activeFilter],
+  const filtered = dummyCoupons.filter(
+    (c) => c.name.includes(searchText) || c.brand.includes(searchText)
   );
-
-  const stats = [
-    { label: "사용 가능", value: rewards.filter((r) => r.status === "available").length, color: "#fe6b70", backgroundColor: "rgba(254, 107, 112, 0.08)", icon: "🎁" },
-    { label: "사용 완료", value: rewards.filter((r) => r.status === "used").length, color: "#22c55e", backgroundColor: "rgba(34, 197, 94, 0.08)", icon: "✅" },
-    { label: "만료", value: rewards.filter((r) => r.status === "expired").length, color: "#9ca3af", backgroundColor: "#f3f4f6", icon: "⏰" },
-  ];
-
-  const handleUseReward = async (reward) => {
-    try {
-      await rewardsApi.use(reward.id);
-      setRawRewards((prev) => prev.map((r) => r.id === reward.id ? { ...r, status: 'USED' } : r));
-    } catch {
-      // ignore
-    }
-  };
 
   return (
     <>
       <div className="page-layout">
         <main className="page-layout__content">
           <section className="rewards-page__intro">
-            <h1 className="page-title rewards-page__title">내 리워드</h1>
-            <p className="page-subtitle">컬렉션 완성으로 받은 혜택과 배지를 한곳에서 확인하고 사용할 수 있어요.</p>
+            <h1 className="page-title rewards-page__title">{t("rewards.title")}</h1>
+            <p className="page-subtitle">{t("rewards.subtitle")}</p>
           </section>
 
-          <StatSummaryGrid items={stats} />
+          {/* 포인트 요약 */}
+          <section className="rewards-page__points-card">
+            <div className="rewards-page__point-row">
+              <span className="rewards-page__point-label">현재 보유 포인트 :</span>
+              <span className="rewards-page__point-value"><strong>7,958</strong> P</span>
+            </div>
+            <div className="rewards-page__point-row">
+              <span className="rewards-page__point-label">소멸 예정 포인트 :</span>
+              <span className="rewards-page__point-value"><strong>2,261</strong> P</span>
+            </div>
+            <div className="rewards-page__point-row">
+              <span className="rewards-page__point-label">적립 예정 포인트 :</span>
+              <span className="rewards-page__point-value"><strong>130</strong> P</span>
+            </div>
+          </section>
 
-          <section className="rewards-page__filters" aria-label="리워드 필터">
-            {rewardFilters.map((filter) => (
-              <button
-                key={filter.id}
-                type="button"
-                className={["rewards-page__filter", filter.id === activeFilter ? "is-active" : ""].join(" ")}
-                onClick={() => setActiveFilter(filter.id)}
-              >
-                {filter.label}
-              </button>
+          {/* 필터 + 검색 */}
+          <section className="rewards-page__filter-bar">
+            <select className="rewards-page__select">
+              <option>선택</option>
+              <option>버거킹</option>
+              <option>스타벅스</option>
+              <option>GS25</option>
+              <option>CU</option>
+            </select>
+            <input
+              type="text"
+              className="rewards-page__search"
+              placeholder="상품을 검색하세요."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </section>
+
+          {/* 쿠폰 갤러리 */}
+          <section className="rewards-page__gallery">
+            {filtered.map((coupon) => (
+              <Coupon key={coupon.id} coupon={coupon} onClick={setSelectedCoupon} />
             ))}
           </section>
-
-          {filteredRewards.length === 0 ? (
-            <EmptyState icon="🎫" title="표시할 리워드가 없어요" description="다른 탭을 확인하거나 컬렉션을 완성해 새로운 보상을 받아보세요." />
-          ) : (
-            <div className="rewards-page__list">
-              {filteredRewards.map((reward, i) => (
-                <RewardCouponCard key={reward.id} reward={reward} index={i} onShowCode={setSelectedReward} />
-              ))}
-            </div>
-          )}
         </main>
       </div>
 
-      {selectedReward && (
-        <RewardCodeModal
-          reward={selectedReward}
-          onClose={() => setSelectedReward(null)}
-          onUse={() => handleUseReward(selectedReward)}
-        />
+      {selectedCoupon && (
+        <CouponWindow coupon={selectedCoupon} onClose={() => setSelectedCoupon(null)} />
       )}
     </>
   );

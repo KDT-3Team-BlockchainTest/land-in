@@ -25,8 +25,21 @@ public enum ErrorCode {
     STEP_ALREADY_DONE(HttpStatus.CONFLICT, "이미 완료한 스텝입니다."),
     WRONG_ORDER(HttpStatus.BAD_REQUEST, "이전 스텝을 먼저 완료해야 합니다."),
 
+    // NFC SUN/SDM
+    SUN_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "서버에 SUN/SDM 키가 설정되지 않았습니다."),
+    SUN_PICC_INVALID(HttpStatus.BAD_REQUEST, "PICC 데이터 복호화에 실패했습니다. piccData 파라미터를 확인해 주세요."),
+    SUN_MAC_INVALID(HttpStatus.UNAUTHORIZED, "NFC 태그 서명 검증에 실패했습니다. 위조된 태그일 수 있습니다."),
+    SUN_COUNTER_REPLAY(HttpStatus.CONFLICT, "이미 사용된 NFC 스캔입니다. 태그를 다시 터치해 주세요."),
+
     // NFT
     NFT_NOT_FOUND(HttpStatus.NOT_FOUND, "NFT를 찾을 수 없습니다."),
+    PHOTO_DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "사진 초안을 찾을 수 없습니다."),
+    DRAFT_NOT_READY_FOR_IPFS(HttpStatus.BAD_REQUEST, "IPFS 업로드 가능한 상태가 아닙니다."),
+    DUPLICATE_NFT_MINT(HttpStatus.CONFLICT, "이미 민팅 요청이 존재하는 사진 초안입니다."),
+    NFT_MINT_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "NFT 민팅 요청을 찾을 수 없습니다."),
+    MINT_NOT_READY_FOR_REWARD(HttpStatus.BAD_REQUEST, "포인트 지급 가능한 민팅 상태가 아닙니다."),
+    FABRIC_REWARD_FAILED(HttpStatus.BAD_GATEWAY, "Fabric 포인트 지급에 실패했습니다."),
+    FABRIC_NFT_RECORD_FAILED(HttpStatus.BAD_GATEWAY, "Fabric NFT 기록에 실패했습니다."),
 
     // Reward
     REWARD_NOT_FOUND(HttpStatus.NOT_FOUND, "리워드를 찾을 수 없습니다."),

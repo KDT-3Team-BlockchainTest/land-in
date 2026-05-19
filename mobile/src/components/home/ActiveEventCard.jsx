@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import EventTagBadge from '../common/EventTagBadge';
 import PlaceImage from '../common/PlaceImage';
 import { colors, radius, shadow } from '../../theme';
 
@@ -13,13 +14,13 @@ export default function ActiveEventCard({ event, onPress }) {
 
       {/* 상단 배지 */}
       <View style={styles.imageOverlay}>
+        <EventTagBadge tag={event.tag || 'ongoing'} />
         {event.daysLeft > 0 && (
           <View style={styles.timer}>
             <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" />
             <Text style={styles.timerText}>{event.daysLeft}일 남음</Text>
           </View>
         )}
-        <Text style={styles.flag}>{event.flag}</Text>
       </View>
 
       <View style={styles.body}>
@@ -53,12 +54,11 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: 140 },
   imageOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: 10,
   },
   timer: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 4 },
   timerText: { fontSize: 11, color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
-  flag: { fontSize: 20 },
   body: { padding: 12, gap: 8 },
   titleGroup: { gap: 3 },
   title: { fontSize: 14, fontWeight: '700', color: colors.gray900, lineHeight: 19 },

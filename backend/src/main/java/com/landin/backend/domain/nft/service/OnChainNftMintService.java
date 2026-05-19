@@ -367,6 +367,9 @@ public class OnChainNftMintService {
     }
 
     private String validateMetadataBaseUrl() {
+        if (blockchainProperties.isSkipMetadataUrlCheck()) {
+            return null;
+        }
         String normalized = normalize(resolveMetadataBaseUrl());
         if (normalized == null) {
             return "Set APP_PUBLIC_BASE_URL to a public URL before on-chain minting.";
@@ -479,7 +482,8 @@ public class OnChainNftMintService {
     }
 
     private TransactionTemplate newTransactionTemplate(int propagationBehavior, boolean readOnly) {
-        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        TransactionTemplate transactionTemplate = new TransactionTemplate(
+                Objects.requireNonNull(transactionManager, "transactionManager must not be null"));
         transactionTemplate.setPropagationBehavior(propagationBehavior);
         transactionTemplate.setReadOnly(readOnly);
         return transactionTemplate;

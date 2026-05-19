@@ -12,3 +12,20 @@ jwt:
 
 app:
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+
+blockchain:
+  enabled: ${BLOCKCHAIN_ENABLED:false}
+  skip-metadata-url-check: ${BLOCKCHAIN_SKIP_METADATA_URL_CHECK:false}
+  minter-private-key: ${BLOCKCHAIN_MINTER_PRIVATE_KEY:}
+
+
+fabric:
+  enabled: true
+  channel-name: channel1
+  chaincode-name: visitledger
+  msp-id: Org1MSP
+  peer-endpoint: localhost:7051
+  tls-cert-path: ${user.home}/Desktop/land-in/land-in/.landin-runtime/fabric-certs/tls-ca.crt
+  user-cert-path: ${user.home}/Desktop/land-in/land-in/.landin-runtime/fabric-certs/user-cert.pem
+  user-key-path: ${user.home}/Desktop/land-in/land-in/.landin-runtime/fabric-certs/user-key.pem
+  deadline-seconds: 30

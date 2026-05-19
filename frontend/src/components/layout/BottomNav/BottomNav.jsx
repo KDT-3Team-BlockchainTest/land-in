@@ -11,36 +11,20 @@ import homeGrayIcon from "../../../assets/icon/icon_home_g.png";
 import homePrimaryIcon from "../../../assets/icon/icon_home_p.png";
 import userGrayIcon from "../../../assets/icon/icon_user_g.png";
 import userPrimaryIcon from "../../../assets/icon/icon_user_p.png";
-
-const navItems = [
-  { key: "home", label: "홈", path: "/", activeIcon: homePrimaryIcon, inactiveIcon: homeGrayIcon },
-  {
-    key: "collection",
-    label: "컬렉션",
-    path: "/collection",
-    activeIcon: bookPrimaryIcon,
-    inactiveIcon: bookGrayIcon,
-  },
-  { key: "tag", label: "태그", path: "/tag", icon: "/icon_logo_test_w.png", primary: true },
-  {
-    key: "reward",
-    label: "리워드",
-    path: "/reward",
-    activeIcon: giftPrimaryIcon,
-    inactiveIcon: giftGrayIcon,
-  },
-  {
-    key: "mypage",
-    label: "마이페이지",
-    path: "/mypage",
-    activeIcon: userPrimaryIcon,
-    inactiveIcon: userGrayIcon,
-  },
-];
+import { useLanguage } from "../../../i18n/LanguageContext";
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
+
+  const navItems = [
+    { key: "home", labelKey: "nav.home", path: "/", activeIcon: homePrimaryIcon, inactiveIcon: homeGrayIcon },
+    { key: "collection", labelKey: "nav.collection", path: "/collection", activeIcon: bookPrimaryIcon, inactiveIcon: bookGrayIcon },
+    { key: "tag", labelKey: "nav.tag", path: "/tag", icon: "/icon_logo_test_w.png", primary: true },
+    { key: "reward", labelKey: "nav.reward", path: "/reward", activeIcon: giftPrimaryIcon, inactiveIcon: giftGrayIcon },
+    { key: "mypage", labelKey: "nav.mypage", path: "/mypage", activeIcon: userPrimaryIcon, inactiveIcon: userGrayIcon },
+  ];
 
   const isActive = (path) => {
     if (path === "/") {
@@ -78,13 +62,13 @@ export default function BottomNav() {
                 .join(" ")
                 .trim()}
               onClick={() => navigate(item.path)}
-              aria-label={item.label}
+              aria-label={t(item.labelKey)}
               aria-current={active ? "page" : undefined}
             >
               <span className="bottom-nav__icon">
                 <IconImage src={iconSrc} size={item.primary ? 24 : 20} />
               </span>
-              <span className="bottom-nav__label">{item.label}</span>
+              <span className="bottom-nav__label">{t(item.labelKey)}</span>
             </button>
           );
         })}
