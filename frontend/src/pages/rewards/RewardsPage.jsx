@@ -77,10 +77,10 @@ export default function RewardsPage() {
               <span className="rewards-page__point-label">소멸 예정 포인트 :</span>
               <span className="rewards-page__point-value"><strong>2,261</strong> P</span>
             </div>
-            <div className="rewards-page__point-row">
+            {/* <div className="rewards-page__point-row">
               <span className="rewards-page__point-label">적립 예정 포인트 :</span>
               <span className="rewards-page__point-value"><strong>130</strong> P</span>
-            </div>
+            </div> */}
           </section>
 
           {/* 필터 + 검색 */}
