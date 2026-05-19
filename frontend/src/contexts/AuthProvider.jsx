@@ -94,6 +94,16 @@ export function AuthProvider({ children }) {
     return profile;
   }, [normalizeProfile]);
 
+  const completeOAuthLogin = useCallback(async (authResultPromise) => {
+    const data = await authResultPromise;
+    localStorage.setItem("land-in-token", data.accessToken);
+    const profile = normalizeProfile(data);
+    localStorage.setItem("land-in-user", JSON.stringify(profile));
+    resetNfcPromptDismissal();
+    setUser(profile);
+    return profile;
+  }, [normalizeProfile]);
+
   const updateUserProfile = useCallback((profile) => {
     const nextUser = normalizeProfile(profile);
     localStorage.setItem("land-in-user", JSON.stringify(nextUser));
@@ -145,7 +155,7 @@ export function AuthProvider({ children }) {
   }, [logout, updateUserProfile]);
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, updateUserProfile, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, completeOAuthLogin, updateUserProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

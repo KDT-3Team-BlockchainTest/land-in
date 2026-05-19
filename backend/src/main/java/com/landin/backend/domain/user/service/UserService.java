@@ -7,6 +7,7 @@ import com.landin.backend.domain.nft.service.OnChainNftMintService;
 import com.landin.backend.domain.user.dto.AuthResponse;
 import com.landin.backend.domain.user.dto.LoginRequest;
 import com.landin.backend.domain.user.dto.SignupRequest;
+import com.landin.backend.domain.user.dto.UpdateProfileRequest;
 import com.landin.backend.domain.user.dto.UserProfileResponse;
 import com.landin.backend.domain.user.dto.WalletConnectRequest;
 import com.landin.backend.domain.user.entity.User;
@@ -90,6 +91,14 @@ public class UserService {
     public UserProfileResponse getProfile(UUID userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        return UserProfileResponse.from(user);
+    }
+
+    @Transactional
+    public UserProfileResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(Objects.requireNonNull(userId, "User id must not be null"))
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.updateProfile(normalizeDisplayName(request.getDisplayName()), user.getAvatarUrl());
         return UserProfileResponse.from(user);
     }
 

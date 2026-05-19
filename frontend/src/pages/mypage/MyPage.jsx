@@ -61,6 +61,7 @@ export default function MyPage() {
   const { t } = useLanguage();
   const [profileSummary, setProfileSummary] = useState(defaultProfile);
   const [walletLoading, setWalletLoading] = useState(false);
+  const profileInitial = (user?.displayName?.trim() || "L").slice(0, 1).toUpperCase();
 
   useEffect(() => {
     let active = true;
@@ -125,7 +126,7 @@ export default function MyPage() {
           <div className="my-page__profile-body">
             <div className="my-page__profile-header">
               <div className="my-page__avatar" aria-hidden="true">
-                {user?.avatarUrl ? <img src={user.avatarUrl} alt="avatar" /> : <span>U</span>}
+                <span>{profileInitial}</span>
               </div>
               <div className="my-page__identity">
                 <div>

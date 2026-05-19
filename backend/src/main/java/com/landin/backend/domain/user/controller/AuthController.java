@@ -1,11 +1,12 @@
 package com.landin.backend.domain.user.controller;
 
-import com.landin.backend.common.response.ApiResponse;
 import com.landin.backend.common.exception.BusinessException;
+import com.landin.backend.common.response.ApiResponse;
 import com.landin.backend.domain.user.dto.AuthResponse;
 import com.landin.backend.domain.user.dto.LoginRequest;
 import com.landin.backend.domain.user.dto.OAuthAuthorizeResponse;
 import com.landin.backend.domain.user.dto.SignupRequest;
+import com.landin.backend.domain.user.dto.UpdateProfileRequest;
 import com.landin.backend.domain.user.dto.UserProfileResponse;
 import com.landin.backend.domain.user.dto.WalletConnectRequest;
 import com.landin.backend.domain.user.oauth.OAuthProvider;
@@ -22,9 +23,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -77,6 +78,14 @@ public class AuthController {
     public ApiResponse<UserProfileResponse> getMe(@AuthenticationPrincipal UserDetails userDetails) {
         UUID userId = UUID.fromString(userDetails.getUsername());
         return ApiResponse.ok(userService.getProfile(userId));
+    }
+
+    @PatchMapping("/me")
+    public ApiResponse<UserProfileResponse> updateMe(
+            @Valid @RequestBody UpdateProfileRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        return ApiResponse.ok(userService.updateProfile(userId, request), "프로필 수정 성공");
     }
 
     @PatchMapping("/wallet")

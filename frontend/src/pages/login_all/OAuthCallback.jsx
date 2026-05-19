@@ -48,7 +48,7 @@ export default function OAuthCallback() {
 
     localStorage.setItem("land-in-token", result.token);
     localStorage.setItem("land-in-user", JSON.stringify(result.profile));
-    navigate(result.profile.walletAddress ? result.next : `/wallet/connect?next=${encodeURIComponent(result.next)}`, {
+    navigate(`/profile/setup?next=${encodeURIComponent(result.next)}`, {
       replace: true,
     });
   }, [navigate, result]);

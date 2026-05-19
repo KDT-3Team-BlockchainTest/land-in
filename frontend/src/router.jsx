@@ -3,6 +3,7 @@ import RequireAuth from "./components/auth/RequireAuth";
 import Login from "./pages/login_all/Login";
 import Join from "./pages/login_all/Join";
 import OAuthCallback from "./pages/login_all/OAuthCallback";
+import ProfileSetupPage from "./pages/profile/ProfileSetupPage";
 import CollectionPage from "./pages/collection/CollectionPage";
 import EventDetailPage from "./pages/event/EventDetailPage";
 import HomePage from "./pages/home/Home";
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: "profile/setup", element: <ProfileSetupPage /> },
       { path: "collection", element: <CollectionPage /> },
       { path: "tag", element: <TagPage /> },
       { path: "reward", element: <RewardsPage /> },

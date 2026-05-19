@@ -189,10 +189,6 @@ public class OAuthService {
 
     private AuthResponse loginOrCreate(OAuthProfile profile) {
         User user = userRepository.findByEmail(profile.email())
-                .map(existing -> {
-                    existing.updateProfile(profile.displayName(), profile.avatarUrl());
-                    return existing;
-                })
                 .orElseGet(() -> userRepository.save(User.builder()
                         .email(profile.email())
                         .password(passwordEncoder.encode(randomPassword()))

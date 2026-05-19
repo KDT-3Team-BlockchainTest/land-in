@@ -8,4 +8,5 @@ export const authApi = {
     return api.get(`/auth/oauth/${provider}/authorize?${params.toString()}`, { auth: false });
   },
   me: () => api.get('/auth/me'),
+  updateMe: (body) => api.patch('/auth/me', body),
 };
