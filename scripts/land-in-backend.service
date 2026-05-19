@@ -1,0 +1,20 @@
+[Unit]
+Description=Land-in Spring Boot Backend
+After=network.target mysql.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Desktop/land-in/land-in/backend
+Environment="SPRING_PROFILES_ACTIVE=local"
+Environment="JAVA_HOME=/home/ubuntu/.sdkman/candidates/java/current"
+Environment="PATH=/home/ubuntu/.sdkman/candidates/java/current/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/ubuntu/Desktop/land-in/land-in/gradlew bootRun
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
