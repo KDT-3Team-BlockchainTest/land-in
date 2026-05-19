@@ -1,14 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLanguage } from '../../contexts/useLanguage';
-import { colors } from '../../theme';
+import { colors, shadow } from '../../theme';
 
 const logoIcon = require('../../assets/icon_logo.png');
 
+const LANGUAGES = [
+  { id: 'ko', label: '한국어 Korean', isDefault: true },
+  { id: 'en', label: '영어 English' },
+  { id: 'ja', label: '일본어 日本語' },
+  { id: 'zh', label: '중국어 中文' },
+];
+
 export default function AppHeader() {
-  const { language, toggleLanguage } = useLanguage();
-  const nextLabel = language === 'ko' ? 'EN' : 'KO';
+  const { lang, changeLanguage } = useLanguage();
+  const [open, setOpen] = useState(false);
 
   return (
     <View style={styles.header}>
@@ -19,14 +26,36 @@ export default function AppHeader() {
           <Text style={styles.brandText}>land-in</Text>
         </View>
 
-        {/* 오른쪽: 언어 토글 */}
-        <TouchableOpacity style={styles.langBtn} onPress={toggleLanguage} activeOpacity={0.7}>
+        {/* 오른쪽: 언어 선택 */}
+        <TouchableOpacity style={styles.iconBtn} onPress={() => setOpen(true)} activeOpacity={0.7} aria-label="언어 선택">
           <Ionicons name="globe-outline" size={20} color="#374151" />
-          <View style={styles.langTag}>
-            <Text style={styles.langTagText}>{nextLabel}</Text>
-          </View>
         </TouchableOpacity>
       </View>
+
+      {/* 언어 선택 팝업 */}
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setOpen(false)} />
+        <View style={styles.popup}>
+          {LANGUAGES.map((item, index) => {
+            const isSelected = lang === item.id;
+            return (
+              <View key={item.id}>
+                <TouchableOpacity
+                  style={[styles.popupItem, isSelected && styles.popupItemSelected]}
+                  onPress={() => { changeLanguage(item.id); setOpen(false); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.popupItemLabel}>
+                    {item.label}{item.isDefault ? ' (기본)' : ''}
+                  </Text>
+                  {isSelected && <Text style={styles.popupItemCheck}>✓</Text>}
+                </TouchableOpacity>
+                {index < LANGUAGES.length - 1 && <View style={styles.popupDivider} />}
+              </View>
+            );
+          })}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -59,28 +88,66 @@ const styles = StyleSheet.create({
     color: colors.primary,
     letterSpacing: 0.2,
   },
-  langBtn: {
+  iconBtn: {
     width: 36,
     height: 36,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: -2,
   },
-  langTag: {
+
+  // 팝업 backdrop (전체 화면 투명)
+  backdrop: {
     position: 'absolute',
-    right: -2,
-    bottom: -2,
-    minWidth: 18,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-    alignItems: 'center',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  langTagText: {
-    fontSize: 9,
+
+  // lang-popup: top:60, right:16, width:220, borderRadius:16, shadow
+  popup: {
+    position: 'absolute',
+    top: 60,
+    right: 16,
+    width: 220,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingVertical: 8,
+    ...shadow.card,
+    shadowOpacity: 0.14,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+
+  // lang-popup__item: padding 14 18, flex row, justify-between
+  popupItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    backgroundColor: 'transparent',
+  },
+  popupItemSelected: {
+    backgroundColor: 'rgba(254, 107, 112, 0.08)',
+  },
+  popupItemLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#111827',
+  },
+  popupItemCheck: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.4,
+    color: colors.primary,
+  },
+
+  // lang-popup__divider: 1px gray-100, margin 0 18
+  popupDivider: {
+    height: 1,
+    backgroundColor: colors.gray100,
+    marginHorizontal: 18,
   },
 });

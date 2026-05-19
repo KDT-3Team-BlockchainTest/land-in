@@ -22,6 +22,11 @@ function interpolate(template, variables) {
 export function LanguageProvider({ children }) {
   const [language, setLanguageState] = useState(DEFAULT_LANGUAGE);
 
+  const changeLanguage = useCallback((newLang) => {
+    setLanguageState(newLang);
+  }, []);
+
+  // 하위 호환: 기존 toggleLanguage 유지
   const toggleLanguage = useCallback(() => {
     setLanguageState((prev) => (prev === 'ko' ? 'en' : 'ko'));
   }, []);
@@ -34,8 +39,9 @@ export function LanguageProvider({ children }) {
         key;
       return interpolate(resolved, variables);
     };
-    return { language, toggleLanguage, t };
-  }, [language, toggleLanguage]);
+    // lang은 프론트엔드와 동일한 인터페이스 (language의 alias)
+    return { language, lang: language, changeLanguage, toggleLanguage, t };
+  }, [language, changeLanguage, toggleLanguage]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

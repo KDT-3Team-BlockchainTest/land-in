@@ -4,6 +4,7 @@ import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../auth/useAuth';
 import EventDetailScreen from '../screens/EventDetailScreen';
+import LanguageScreen from '../screens/LanguageScreen';
 import MyProgressScreen from '../screens/MyProgressScreen';
 import NftGalleryScreen from '../screens/NftGalleryScreen';
 import WalletConnectScreen from '../screens/WalletConnectScreen';
@@ -55,6 +56,11 @@ export default function AppNavigator() {
             name="WalletConnect"
             component={WalletConnectScreen}
             options={{ headerShown: true, title: '지갑 연결', ...HEADER_OPTS }}
+          />
+          <Stack.Screen
+            name="Language"
+            component={LanguageScreen}
+            options={{ headerShown: false }}
           />
         </Stack.Navigator>
       ) : (
