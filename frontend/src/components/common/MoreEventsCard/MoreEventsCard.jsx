@@ -1,15 +1,12 @@
 import "./MoreEventsCard.css";
-import { useLanguage } from "../../../contexts/useLanguage";
 
 export default function MoreEventsCard() {
-  const { t } = useLanguage();
-  const label = t("event.moreEvents");
   return (
-    <aside className="more-events-card" aria-label={label}>
+    <aside className="more-events-card" aria-label="더 많은 이벤트">
       <div className="more-events-card__icon" aria-hidden="true">
         🌐
       </div>
-      <p className="more-events-card__text">{label}</p>
+      <p className="more-events-card__text">더 많은 이벤트</p>
     </aside>
   );
 }

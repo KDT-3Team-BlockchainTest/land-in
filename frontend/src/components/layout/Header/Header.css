@@ -56,7 +56,6 @@
 }
 
 .app-header__icon-button {
-  position: relative;
   width: 36px;
   height: 36px;
   display: inline-flex;
@@ -73,19 +72,61 @@
   margin-right: -2px;
 }
 
-.app-header__language-tag {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  min-width: 18px;
-  padding: 1px 4px;
-  font-size: 9px;
+/* 언어 선택 팝업 */
+.lang-popup__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.lang-popup {
+  position: fixed;
+  top: 60px;
+  right: calc(50% - 210px + 16px);
+  z-index: 100;
+  width: 220px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  padding: 8px 0;
+}
+
+@media (max-width: 420px) {
+  .lang-popup {
+    right: 16px;
+  }
+}
+
+.lang-popup__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  padding: 14px 18px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lang-popup__item.is-selected {
+  background: rgba(254, 107, 112, 0.08);
+}
+
+.lang-popup__item-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.lang-popup__item-check {
+  font-size: 15px;
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.04em;
-  color: #ffffff;
-  background: #fe6b70;
-  border-radius: 999px;
-  text-align: center;
-  pointer-events: none;
+  color: #fe6b70;
+}
+
+.lang-popup__divider {
+  margin: 0 18px;
+  height: 1px;
+  background: #f3f4f6;
 }

@@ -1,9 +1,15 @@
 import "./RewardCouponCard.css";
-import { useLanguage } from "../../../contexts/useLanguage";
+import { useLanguage } from "../../../i18n/LanguageContext";
 
 function getStatusClassName(status) {
-  if (status === "used") return "reward-coupon-card--used";
-  if (status === "expired") return "reward-coupon-card--expired";
+  if (status === "used") {
+    return "reward-coupon-card--used";
+  }
+
+  if (status === "expired") {
+    return "reward-coupon-card--expired";
+  }
+
   return "reward-coupon-card--available";
 }
 
@@ -12,19 +18,17 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
   const statusClassName = getStatusClassName(reward.status);
   const isAvailable = reward.status === "available";
 
-  const statusLabel =
-    reward.status === "used"
-      ? t("reward.statusUsed")
-      : reward.status === "expired"
-        ? t("reward.statusExpired")
-        : t("reward.statusAvailable");
+  const statusLabel = reward.status === "used"
+    ? t("reward.status.used")
+    : reward.status === "expired"
+      ? t("reward.status.expired")
+      : t("reward.status.available");
 
-  const dateLabel =
-    reward.status === "available"
-      ? t("reward.validUntil")
-      : reward.status === "used"
-        ? t("reward.usedOn")
-        : t("reward.expiredOn");
+  const dateLabel = reward.status === "available"
+    ? t("reward.valid_until")
+    : reward.status === "used"
+      ? t("reward.used_date")
+      : t("reward.expired_date");
 
   return (
     <article
@@ -50,7 +54,7 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
 
         <div className="reward-coupon-card__meta">
           <div>
-            <p className="reward-coupon-card__meta-label">{t("reward.couponLabel")}</p>
+            <p className="reward-coupon-card__meta-label">{t("reward.coupon_code")}</p>
             <p className="reward-coupon-card__meta-value">{reward.couponCode}</p>
           </div>
           <div>
@@ -63,7 +67,7 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
 
         <div className="reward-coupon-card__footer">
           <div>
-            <p className="reward-coupon-card__partner-label">{t("reward.partnerLabel")}</p>
+            <p className="reward-coupon-card__partner-label">{t("reward.partner")}</p>
             <p className="reward-coupon-card__partner-value">{reward.partner}</p>
           </div>
 
@@ -73,11 +77,11 @@ export default function RewardCouponCard({ reward, index = 0, onShowCode }) {
               className="reward-coupon-card__action"
               onClick={() => onShowCode(reward)}
             >
-              {t("reward.qrView")}
+              {t("reward.view_qr")}
             </button>
           ) : (
             <span className="reward-coupon-card__passive-action">
-              {reward.status === "used" ? t("reward.usedShort") : t("reward.endedShort")}
+              {reward.status === "used" ? t("reward.used_passive") : t("reward.ended_passive")}
             </span>
           )}
         </div>

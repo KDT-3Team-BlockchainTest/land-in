@@ -1,10 +1,8 @@
 import "./CollectionFilterTabs.css";
-import { useLanguage } from "../../../contexts/useLanguage";
 
 export default function CollectionFilterTabs({ filters, activeFilter, onChange }) {
-  const { t } = useLanguage();
   return (
-    <div className="collection-filter-tabs" role="tablist" aria-label={t("collection.filterTabsLabel")}>
+    <div className="collection-filter-tabs" role="tablist" aria-label="컬렉션 필터">
       {filters.map((filter) => {
         const isActive = filter.id === activeFilter;
 

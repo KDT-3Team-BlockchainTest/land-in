@@ -10,7 +10,7 @@ import EventRewardCard from "../../components/common/EventRewardCard/EventReward
 import EventRouteTimeline from "../../components/common/EventRouteTimeline/EventRouteTimeline";
 import GradientActionButton from "../../components/common/GradientActionButton/GradientActionButton";
 import useJoinedEventIds from "../../hooks/useJoinedEventIds";
-import { useLanguage } from "../../contexts/useLanguage";
+import { useLanguage } from "../../i18n/LanguageContext";
 
 export default function EventDetailPage() {
   const navigate = useNavigate();
@@ -59,15 +59,11 @@ export default function EventDetailPage() {
   const isJoined = raw.joined;
   const isJoinable = event.participationState === 'joinable';
   const hasCurrentStep = event.routeSteps.some((s) => s.stepState === 'current');
-  const statusLabel = isJoined
-    ? t('event.participationJoined')
-    : isJoinable
-      ? t('event.participationJoinable')
-      : event.detailStatusLabel;
+  const statusLabel = isJoined ? t("event.status.ongoing") : (isJoinable ? t("event.status.joinable") : event.detailStatusLabel);
 
   let actionLabel = event.bottomCtaLabel;
-  if (isJoinable && !isJoined) actionLabel = t('event.joinAndView');
-  else if (hasCurrentStep) actionLabel = t('nav.tag');
+  if (isJoinable && !isJoined) actionLabel = t("event.action.join");
+  else if (hasCurrentStep) actionLabel = t("event.action.tag");
 
   const handleBottomAction = async () => {
     if (isJoinable && !isJoined) {

@@ -1,15 +1,12 @@
 import "./RouteMapTeaser.css";
 import { Link } from "react-router-dom";
-import { useLanguage } from "../../../contexts/useLanguage";
 
 export default function RouteMapTeaser({
   to,
   title,
   description,
-  actionLabel,
+  actionLabel = "루트 보기",
 }) {
-  const { t } = useLanguage();
-  const resolvedActionLabel = actionLabel ?? t("routeMap.defaultAction");
   return (
     <Link to={to} className="route-map-teaser">
       <div className="route-map-teaser__dots" aria-hidden="true">
@@ -34,7 +31,7 @@ export default function RouteMapTeaser({
           <p className="route-map-teaser__description">{description}</p>
         </div>
 
-        <span className="route-map-teaser__action">{resolvedActionLabel}</span>
+        <span className="route-map-teaser__action">{actionLabel}</span>
       </div>
     </Link>
   );

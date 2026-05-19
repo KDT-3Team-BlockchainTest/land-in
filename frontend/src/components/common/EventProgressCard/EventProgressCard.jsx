@@ -1,6 +1,6 @@
 import "./EventProgressCard.css";
 import ProgressBar from "../ProgressBar/ProgressBar";
-import { useLanguage } from "../../../contexts/useLanguage";
+import { useLanguage } from "../../../i18n/LanguageContext";
 
 export default function EventProgressCard({ collected, total }) {
   const { t } = useLanguage();
@@ -10,15 +10,15 @@ export default function EventProgressCard({ collected, total }) {
   return (
     <section className="event-progress-card">
       <div className="event-progress-card__header">
-        <h2 className="event-progress-card__title">{t("event.progressTitle")}</h2>
+        <h2 className="event-progress-card__title">{t("event.progress.title")}</h2>
         <span className="event-progress-card__percent">{progressPercent}%</span>
       </div>
 
       <ProgressBar value={collected} max={total} className="event-progress-card__track" />
 
       <div className="event-progress-card__footer">
-        <span>{t("event.collectedLabel", { collected, total })}</span>
-        <span>{t("event.progressRemaining", { count: remainingCount })}</span>
+        <span>{t("event.progress.landmarks", { collected, total })}</span>
+        <span>{t("event.progress.remaining", { count: remainingCount })}</span>
       </div>
     </section>
   );

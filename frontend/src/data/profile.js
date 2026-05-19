@@ -1,4 +1,4 @@
-export function getAchievementItems(profileSummary = {}) {
+export function getAchievementItems(profileSummary = {}, t = (k) => k) {
   const stats = {
     nftCount: profileSummary.nftCount ?? 0,
     cityCount: profileSummary.cityCount ?? 0,
@@ -11,99 +11,61 @@ export function getAchievementItems(profileSummary = {}) {
     {
       id: "first-nft",
       emoji: "🎉",
-      title: "첫 번째 NFT",
-      description: "여행 중 첫 랜드마크 NFT를 수집했어요.",
+      title: t("achievement.first_nft.title"),
+      description: t("achievement.first_nft.desc"),
       state: stats.nftCount >= 1 ? "unlocked" : "progress",
-      progress: {
-        current: Math.min(stats.nftCount, 1),
-        total: 1,
-        label: "NFT 수집",
-      },
+      progress: { current: Math.min(stats.nftCount, 1), total: 1, label: t("achievement.first_nft.label") },
       color: "#fe6b70",
       backgroundColor: "rgba(254, 107, 112, 0.12)",
     },
     {
       id: "city-explorer",
       emoji: "🌆",
-      title: "도시 탐험가",
-      description: "3개 이상의 도시 컬렉션에 참여해보세요.",
+      title: t("achievement.city_explorer.title"),
+      description: t("achievement.city_explorer.desc"),
       state: stats.cityCount >= 3 ? "unlocked" : "progress",
-      progress: {
-        current: Math.min(stats.cityCount, 3),
-        total: 3,
-        label: "도시 참여",
-      },
+      progress: { current: Math.min(stats.cityCount, 3), total: 3, label: t("achievement.city_explorer.label") },
       color: "#8b5cf6",
       backgroundColor: "rgba(139, 92, 246, 0.12)",
     },
     {
       id: "collection-master",
       emoji: "🏆",
-      title: "컬렉션 마스터",
-      description: "3개의 컬렉션을 완성하면 특별 리워드가 열려요.",
+      title: t("achievement.collection_master.title"),
+      description: t("achievement.collection_master.desc"),
       state: stats.completedCollectionCount >= 3 ? "unlocked" : "progress",
-      progress: {
-        current: Math.min(stats.completedCollectionCount, 3),
-        total: 3,
-        label: "컬렉션 완성",
-      },
+      progress: { current: Math.min(stats.completedCollectionCount, 3), total: 3, label: t("achievement.collection_master.label") },
       color: "#22c55e",
       backgroundColor: "rgba(34, 197, 94, 0.12)",
     },
     {
       id: "landmark-hunter",
       emoji: "📸",
-      title: "랜드마크 헌터",
-      description: "랜드마크 30곳 방문을 목표로 수집을 이어가보세요.",
+      title: t("achievement.landmark_hunter.title"),
+      description: t("achievement.landmark_hunter.desc"),
       state: stats.landmarkCount >= 30 ? "unlocked" : "progress",
-      progress: {
-        current: Math.min(stats.landmarkCount, 30),
-        total: 30,
-        label: "랜드마크 방문",
-      },
+      progress: { current: Math.min(stats.landmarkCount, 30), total: 30, label: t("achievement.landmark_hunter.label") },
       color: "#f59e0b",
       backgroundColor: "rgba(245, 158, 11, 0.12)",
     },
     {
       id: "world-traveler",
       emoji: "🌍",
-      title: "월드 트래블러",
-      description: "2개 이상의 국가에서 컬렉션에 참여해보세요.",
+      title: t("achievement.world_traveler.title"),
+      description: t("achievement.world_traveler.desc"),
       state: stats.countryCount >= 2 ? "unlocked" : "progress",
-      progress: {
-        current: Math.min(stats.countryCount, 2),
-        total: 2,
-        label: "국가 방문",
-      },
+      progress: { current: Math.min(stats.countryCount, 2), total: 2, label: t("achievement.world_traveler.label") },
       color: "#06b6d4",
       backgroundColor: "rgba(6, 182, 212, 0.12)",
     },
   ];
 }
 
-export const settingsItems = [
-  {
-    id: "notification",
-    emoji: "🔔",
-    label: "알림 설정",
-    description: "리워드와 컬렉션 진행 알림을 관리해요.",
-  },
-  {
-    id: "language",
-    emoji: "🌐",
-    label: "언어 설정",
-    description: "앱 언어와 지역 표시를 변경할 수 있어요.",
-  },
-  {
-    id: "security",
-    emoji: "🔒",
-    label: "개인정보 및 보안",
-    description: "계정 보호와 로그인 정보를 확인해요.",
-  },
-  {
-    id: "support",
-    emoji: "💬",
-    label: "고객센터",
-    description: "문의 내역과 도움말을 확인할 수 있어요.",
-  },
-];
+export function getSettingsItems(t = (k) => k) {
+  return [
+    { id: "notification", emoji: "🔔", label: t("settings.notification.label"), description: t("settings.notification.desc"), to: "/settings/language" },
+    { id: "language", emoji: "🌐", label: t("settings.language.label"), description: t("settings.language.desc"), to: "/settings/language" },
+    { id: "security", emoji: "🔒", label: t("settings.security.label"), description: t("settings.security.desc") },
+    { id: "support", emoji: "💬", label: t("settings.support.label"), description: t("settings.support.desc") },
+  ];
+}
